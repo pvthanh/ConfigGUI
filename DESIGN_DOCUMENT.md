@@ -112,6 +112,8 @@ graph TB
     style CORE fill:#fff3e0,stroke:#e65100,stroke-width:2px
     style UTIL fill:#fce4ec,stroke:#880e4f,stroke-width:2px
 ```
+
+```text
 │                   CORE DATA MODEL LAYER                       │
 │  ┌──────────────────────────────────────────────────────┐    │
 │  │              Schema (JSONSchema)                     │    │
@@ -156,8 +158,8 @@ graph TB
 │  │ • Multi-level│ │ • trim/split │ │ • exists()   │         │
 │  │   logging    │ │ • case conv. │ │ • read/write │         │
 │  │ • Formatting │ │ • replace    │ │ • metadata   │         │
-│  └──────────────┘ └──────────────┘ └──────────────┘         │
-└─────────────────────────────────────────────────────────────┘
+│  └──────────────┘ └──────────────┘ └──────────────┘          │
+└──────────────────────────────────────────────────────────────┘
 ```
 
 ---
