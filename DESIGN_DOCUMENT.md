@@ -130,18 +130,6 @@ graph TB
 **Purpose**: User-facing GUI and form rendering
 
 **Components**:
-```
-IValidator (Abstract)
-     ▲
-     │
-     ├─ TypeValidator
-     ├─ RangeValidator
-     ├─ PatternValidator
-     ├─ EnumValidator
-     └─ RequiredValidator
-```
-
-**Classes**:
 - `MainWindow`: Qt main application window
 - `FormGenerator`: Dynamically generates forms from schemas
 - `WidgetFactory`: Creates Qt widgets for different field types
