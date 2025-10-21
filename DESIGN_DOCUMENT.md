@@ -72,26 +72,26 @@ graph TB
     end
     
     subgraph PROC["✅ PROCESSING LAYER"]
-        IVA["IValidator<br/>Abstract"]
+        IVA["IValidator (Abstract)"]
         TV["TypeValidator"]
         RV["RangeValidator"]
-        PV["PatternValidator<br/>Regex Cache"]
+        PV["PatternValidator (Regex Cache)"]
         EV["EnumValidator"]
         REQ["RequiredValidator"]
     end
     
     subgraph CORE["💾 CORE DATA MODEL LAYER"]
-        SCH["Schema (JSONSchema)<br/>• title, description<br/>• properties<br/>• required fields<br/>• field indexing"]
-        CFG["Configuration Data<br/>• Loaded values<br/>• Type-safe access<br/>• Move semantics"]
-        FS["Form State<br/>• Widget state<br/>• Change detection<br/>• Validation state"]
-        IO["I/O Layer<br/>• JsonReader/Writer<br/>• YamlReader/Writer"]
-        ER["Error Handling<br/>• Result&lt;T, E&gt;<br/>• ValidationError<br/>• No exceptions"]
+        SCH["Schema (JSONSchema)<br>title, description<br>properties, required<br>field indexing"]
+        CFG["Configuration Data<br>Loaded values<br>Type-safe access<br>Move semantics"]
+        FS["Form State<br>Widget state<br>Change detection<br>Validation state"]
+        IO["I/O Layer<br>JsonReader/Writer<br>YamlReader/Writer"]
+        ER["Error Handling<br>Result template<br>ValidationError<br>No exceptions"]
     end
     
     subgraph UTIL["🔧 UTILITY/INFRA LAYER"]
-        LOG["Logger<br/>• Multi-level<br/>• Formatting"]
-        STR["StringUtils<br/>• trim/split<br/>• case conv.<br/>• replace"]
-        FILE["FileUtils<br/>• exists()<br/>• read/write<br/>• metadata"]
+        LOG["Logger<br>Multi-level<br>Formatting"]
+        STR["StringUtils<br>trim/split<br>case conv.<br>replace"]
+        FILE["FileUtils<br>exists()<br>read/write<br>metadata"]
     end
     
     APP -->|uses| UI
