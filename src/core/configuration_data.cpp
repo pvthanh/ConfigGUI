@@ -44,19 +44,19 @@ void ConfigurationData::set_value(const QString& field_name, const QVariant& val
     mark_dirty(field_name);
 
     const auto key = field_name.toStdString();
-    if (value.type() == QVariant::String)
+    if (value.typeId() == QMetaType::QString)
     {
         data_[key] = value.toString().toStdString();
     }
-    else if (value.type() == QVariant::Int)
+    else if (value.typeId() == QMetaType::Int)
     {
         data_[key] = value.toInt();
     }
-    else if (value.type() == QVariant::Double)
+    else if (value.typeId() == QMetaType::Double)
     {
         data_[key] = value.toDouble();
     }
-    else if (value.type() == QVariant::Bool)
+    else if (value.typeId() == QMetaType::Bool)
     {
         data_[key] = value.toBool();
     }

@@ -9,6 +9,14 @@
 #include <string>
 
 using json = nlohmann::json;
+using configgui::core::Result;
+using YamlResult = configgui::core::Result<nlohmann::json, std::string>;
+
+// Use an error wrapper to avoid ambiguity when T and E are the same type
+struct Error { std::string message; };
+
+using VoidResult = configgui::core::Result<nlohmann::json, Error>;
+using StringResult = configgui::core::Result<std::string, Error>;
 
 namespace configgui {
 namespace io {
@@ -28,14 +36,14 @@ public:
      * @param data JSON data to write as YAML
      * @return Result indicating success or error
      */
-    static Result<void> writeFile(const std::string& file_path, const json& data);
+    static VoidResult writeFile(const std::string& file_path, const json& data);
 
     /**
      * @brief Convert JSON to YAML string
      * @param data JSON data to convert
      * @return Result containing YAML string or error
      */
-    static Result<std::string> toString(const json& data);
+    static StringResult toString(const json& data);
 
 private:
     YamlWriter() = default;

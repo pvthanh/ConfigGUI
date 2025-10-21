@@ -121,7 +121,7 @@ QWidget* WidgetFactory::createNumberWidget(const json& schema, QWidget* parent)
     return widget;
 }
 
-QWidget* WidgetFactory::createBooleanWidget(const json& schema, QWidget* parent)
+QWidget* WidgetFactory::createBooleanWidget(const json& /*schema*/, QWidget* parent)
 {
     return new QCheckBox(parent);
 }

@@ -8,7 +8,7 @@
 namespace configgui {
 namespace io {
 
-Result<void> JsonWriter::writeFile(const std::string& file_path, const json& data,
+VoidResult JsonWriter::writeFile(const std::string& file_path, const json& data,
                                    bool pretty_print)
 {
     try
@@ -16,7 +16,7 @@ Result<void> JsonWriter::writeFile(const std::string& file_path, const json& dat
         std::ofstream file(file_path);
         if (!file.is_open())
         {
-            return Result<void>::Error("Cannot open file for writing: " + file_path);
+            return VoidResult(Error{"Cannot open file for writing: " + file_path});
         }
 
         // OPTIMIZATION: Write directly to file stream without intermediate string allocation
@@ -31,15 +31,15 @@ Result<void> JsonWriter::writeFile(const std::string& file_path, const json& dat
         }
 
         file.close();
-        return Result<void>::Ok();
+        return VoidResult(Success{});
     }
     catch (const std::exception& e)
     {
-        return Result<void>::Error(std::string("Failed to write JSON file: ") + e.what());
+        return VoidResult(Error{"Failed to write JSON file: " + std::string(e.what())});
     }
 }
 
-Result<std::string> JsonWriter::toString(const json& data, bool pretty_print)
+StringResult JsonWriter::toString(const json& data, bool pretty_print)
 {
     try
     {
@@ -55,11 +55,11 @@ Result<std::string> JsonWriter::toString(const json& data, bool pretty_print)
         }
 
         // Move construction avoids copy on return (RVO-compatible)
-        return Result<std::string>::Ok(std::move(result));
+        return StringResult(std::move(result));
     }
     catch (const std::exception& e)
     {
-        return Result<std::string>::Error(std::string("Failed to serialize JSON: ") + e.what());
+        return StringResult(Error{"Failed to serialize JSON: " + std::string(e.what())});
     }
 }
 

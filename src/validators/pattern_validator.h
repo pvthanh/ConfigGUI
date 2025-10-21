@@ -72,7 +72,7 @@ private:
     static std::shared_ptr<const std::regex> getCachedRegex(const std::string& pattern);
 
     // Static thread-safe regex cache
-    static mutable std::shared_mutex s_regex_cache_mutex;
+    static std::shared_mutex s_regex_cache_mutex;
     static std::unordered_map<std::string, std::shared_ptr<const std::regex>> s_regex_cache;
     static size_t s_cache_lookups;
 };

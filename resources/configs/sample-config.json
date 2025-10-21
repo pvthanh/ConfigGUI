@@ -1,0 +1,16 @@
+{
+  "application": {
+    "enabled": true,
+    "name": "My Test Application",
+    "port": 8080,
+    "version": "1.0.1"
+  },
+  "database": {
+    "connection_string": "postgresql://user:password@db-server:5432/mydb",
+    "max_connections": 100
+  },
+  "server": {
+    "host": "api.example.com",
+    "timeout": 300
+  }
+}

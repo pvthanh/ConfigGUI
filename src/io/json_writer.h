@@ -9,6 +9,17 @@
 #include <string>
 
 using json = nlohmann::json;
+using configgui::core::Result;
+using JsonResult = configgui::core::Result<nlohmann::json, std::string>;
+
+// Use an error wrapper to avoid ambiguity when T and E are the same type
+struct Error { std::string message; };
+
+using StringResult = configgui::core::Result<std::string, Error>;
+
+// For void results, we use an empty struct as success marker
+struct Success {};
+using VoidResult = configgui::core::Result<Success, Error>;
 
 namespace configgui {
 namespace io {
@@ -31,7 +42,7 @@ public:
      * @param pretty_print Use formatted output
      * @return Result indicating success or error
      */
-    static Result<void> writeFile(const std::string& file_path, const json& data,
+    static VoidResult writeFile(const std::string& file_path, const json& data,
                                   bool pretty_print = true);
 
     /**
@@ -40,7 +51,7 @@ public:
      * @param pretty_print Use formatted output
      * @return Result containing JSON string or error
      */
-    static Result<std::string> toString(const json& data, bool pretty_print = true);
+    static StringResult toString(const json& data, bool pretty_print = true);
 
 private:
     JsonWriter() = default;

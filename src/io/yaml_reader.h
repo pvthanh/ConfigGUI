@@ -9,6 +9,8 @@
 #include <string>
 
 using json = nlohmann::json;
+using configgui::core::Result;
+using YamlResult = configgui::core::Result<nlohmann::json, std::string>;
 
 namespace configgui {
 namespace io {
@@ -28,14 +30,14 @@ public:
      * @param file_path Path to YAML file
      * @return Result containing parsed JSON or error
      */
-    static Result<json> readFile(const std::string& file_path);
+    static YamlResult readFile(const std::string& file_path);
 
     /**
      * @brief Read YAML from string
      * @param yaml_string YAML string content
      * @return Result containing parsed JSON or error
      */
-    static Result<json> readString(const std::string& yaml_string);
+    static YamlResult readString(const std::string& yaml_string);
 
 private:
     YamlReader() = default;

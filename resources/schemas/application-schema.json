@@ -1,0 +1,78 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Application Configuration Schema",
+  "description": "A simple application configuration schema for testing",
+  "type": "object",
+  "properties": {
+    "application": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Application name",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "version": {
+          "type": "string",
+          "description": "Application version",
+          "pattern": "^[0-9]+(\\.[0-9]+)*$"
+        },
+        "enabled": {
+          "type": "boolean",
+          "description": "Is application enabled"
+        },
+        "port": {
+          "type": "integer",
+          "description": "Port number",
+          "minimum": 1,
+          "maximum": 65535
+        }
+      },
+      "required": ["name", "version"]
+    },
+    "server": {
+      "type": "object",
+      "properties": {
+        "host": {
+          "type": "string",
+          "description": "Server hostname",
+          "default": "localhost"
+        },
+        "timeout": {
+          "type": "integer",
+          "description": "Timeout in seconds",
+          "minimum": 1,
+          "maximum": 3600
+        },
+        "environment": {
+          "type": "string",
+          "description": "Server environment",
+          "enum": ["development", "staging", "production"]
+        }
+      }
+    },
+    "database": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Database type",
+          "enum": ["sqlite", "mysql", "postgresql"]
+        },
+        "connection_string": {
+          "type": "string",
+          "description": "Database connection string"
+        },
+        "max_connections": {
+          "type": "integer",
+          "description": "Maximum number of connections",
+          "minimum": 1,
+          "maximum": 1000
+        }
+      },
+      "required": ["type"]
+    }
+  },
+  "required": ["application"]
+}

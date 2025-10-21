@@ -32,13 +32,14 @@ bool FormGenerator::generateFromSchema(const json& schema)
         return false;
     }
 
+    // Store the schema for later use in getFormData()
+    schema_ = schema;
+
     const auto& properties = schema["properties"];
     if (!properties.is_object())
     {
         return false;
     }
-
-    WidgetFactory factory;
 
     for (auto it = properties.begin(); it != properties.end(); ++it)
     {
@@ -53,6 +54,32 @@ bool FormGenerator::generateFromSchema(const json& schema)
 }
 
 void FormGenerator::addFieldToForm(const QString& field_name, const json& field_schema)
+{
+    // Check if this is a nested object with properties
+    if (field_schema.is_object() && field_schema.contains("properties") && 
+        field_schema["type"].is_string() && field_schema["type"].get<std::string>() == "object")
+    {
+        // Create a group/section for this object
+        auto* section_label = new QLabel(field_name + ":");
+        section_label->setStyleSheet("font-weight: bold; margin-top: 10px; margin-bottom: 5px;");
+        layout_->addWidget(section_label);
+
+        // Add fields from nested object
+        const auto& properties = field_schema["properties"];
+        for (auto it = properties.begin(); it != properties.end(); ++it)
+        {
+            const QString nested_field_name = QString::fromStdString(it.key());
+            const json& nested_field_schema = it.value();
+            addSimpleFieldToForm(nested_field_name, nested_field_schema);
+        }
+        return;
+    }
+
+    // Otherwise, add as a simple field
+    addSimpleFieldToForm(field_name, field_schema);
+}
+
+void FormGenerator::addSimpleFieldToForm(const QString& field_name, const json& field_schema)
 {
     // Create horizontal layout for label and widget
     auto* h_layout = new QHBoxLayout();
@@ -105,26 +132,105 @@ json FormGenerator::getFormData() const
 {
     json data = json::object();
 
-    for (auto it = field_widgets_.begin(); it != field_widgets_.end(); ++it)
+    // If we have a schema with nested objects, reconstruct that structure
+    if (schema_.contains("properties"))
     {
-        const QString& field_name = it.key();
-        const FieldWidget& fw = it.value();
+        const auto& properties = schema_["properties"];
+        
+        for (auto it = properties.begin(); it != properties.end(); ++it)
+        {
+            const QString section_name = QString::fromStdString(it.key());
+            const json& section_schema = it.value();
 
-        if (auto* line_edit = qobject_cast<QLineEdit*>(fw.widget))
-        {
-            data[field_name.toStdString()] = line_edit->text().toStdString();
+            // Check if this is a nested object
+            if (section_schema.is_object() && section_schema.contains("properties") &&
+                section_schema["type"].is_string() && section_schema["type"].get<std::string>() == "object")
+            {
+                // Create a nested object
+                json nested_obj = json::object();
+                const auto& nested_properties = section_schema["properties"];
+
+                for (auto nested_it = nested_properties.begin(); nested_it != nested_properties.end(); ++nested_it)
+                {
+                    const QString nested_field_name = QString::fromStdString(nested_it.key());
+                    
+                    // Get value from field widget
+                    if (field_widgets_.contains(nested_field_name))
+                    {
+                        const FieldWidget& fw = field_widgets_[nested_field_name];
+
+                        if (auto* line_edit = qobject_cast<QLineEdit*>(fw.widget))
+                        {
+                            nested_obj[nested_field_name.toStdString()] = line_edit->text().toStdString();
+                        }
+                        else if (auto* spin_box = qobject_cast<QSpinBox*>(fw.widget))
+                        {
+                            nested_obj[nested_field_name.toStdString()] = spin_box->value();
+                        }
+                        else if (auto* double_spin = qobject_cast<QDoubleSpinBox*>(fw.widget))
+                        {
+                            nested_obj[nested_field_name.toStdString()] = double_spin->value();
+                        }
+                        else if (auto* check_box = qobject_cast<QCheckBox*>(fw.widget))
+                        {
+                            nested_obj[nested_field_name.toStdString()] = check_box->isChecked();
+                        }
+                    }
+                }
+
+                data[section_name.toStdString()] = nested_obj;
+            }
+            else
+            {
+                // Simple field at top level
+                if (field_widgets_.contains(section_name))
+                {
+                    const FieldWidget& fw = field_widgets_[section_name];
+
+                    if (auto* line_edit = qobject_cast<QLineEdit*>(fw.widget))
+                    {
+                        data[section_name.toStdString()] = line_edit->text().toStdString();
+                    }
+                    else if (auto* spin_box = qobject_cast<QSpinBox*>(fw.widget))
+                    {
+                        data[section_name.toStdString()] = spin_box->value();
+                    }
+                    else if (auto* double_spin = qobject_cast<QDoubleSpinBox*>(fw.widget))
+                    {
+                        data[section_name.toStdString()] = double_spin->value();
+                    }
+                    else if (auto* check_box = qobject_cast<QCheckBox*>(fw.widget))
+                    {
+                        data[section_name.toStdString()] = check_box->isChecked();
+                    }
+                }
+            }
         }
-        else if (auto* spin_box = qobject_cast<QSpinBox*>(fw.widget))
+    }
+    else
+    {
+        // Fallback to flat structure
+        for (auto it = field_widgets_.begin(); it != field_widgets_.end(); ++it)
         {
-            data[field_name.toStdString()] = spin_box->value();
-        }
-        else if (auto* double_spin = qobject_cast<QDoubleSpinBox*>(fw.widget))
-        {
-            data[field_name.toStdString()] = double_spin->value();
-        }
-        else if (auto* check_box = qobject_cast<QCheckBox*>(fw.widget))
-        {
-            data[field_name.toStdString()] = check_box->isChecked();
+            const QString& field_name = it.key();
+            const FieldWidget& fw = it.value();
+
+            if (auto* line_edit = qobject_cast<QLineEdit*>(fw.widget))
+            {
+                data[field_name.toStdString()] = line_edit->text().toStdString();
+            }
+            else if (auto* spin_box = qobject_cast<QSpinBox*>(fw.widget))
+            {
+                data[field_name.toStdString()] = spin_box->value();
+            }
+            else if (auto* double_spin = qobject_cast<QDoubleSpinBox*>(fw.widget))
+            {
+                data[field_name.toStdString()] = double_spin->value();
+            }
+            else if (auto* check_box = qobject_cast<QCheckBox*>(fw.widget))
+            {
+                data[field_name.toStdString()] = check_box->isChecked();
+            }
         }
     }
 
@@ -138,9 +244,24 @@ void FormGenerator::setFormData(const json& data)
         return;
     }
 
+    // Handle nested objects (e.g., application, server, database sections)
     for (auto it = data.begin(); it != data.end(); ++it)
     {
-        updateFieldValue(QString::fromStdString(it.key()), it.value());
+        const json& value = it.value();
+        
+        // If the value is a nested object, recursively update its fields
+        if (value.is_object())
+        {
+            for (auto nested_it = value.begin(); nested_it != value.end(); ++nested_it)
+            {
+                updateFieldValue(QString::fromStdString(nested_it.key()), nested_it.value());
+            }
+        }
+        else
+        {
+            // Otherwise update the field directly
+            updateFieldValue(QString::fromStdString(it.key()), value);
+        }
     }
 
     is_dirty_ = false;

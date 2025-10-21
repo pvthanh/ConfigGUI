@@ -38,7 +38,7 @@ std::vector<std::string> StringUtils::split(const std::string& str, char delimit
 
     // OPTIMIZATION: Pre-allocate based on delimiter count estimate
     // Count delimiters to estimate number of parts (typical +1 for last part)
-    size_t delimiter_count = std::count(str.begin(), str.end(), delimiter);
+    size_t delimiter_count = static_cast<size_t>(std::count(str.begin(), str.end(), delimiter));
     result.reserve(delimiter_count + 1);
 
     // Pre-allocate current string to avoid repeated allocations during concatenation

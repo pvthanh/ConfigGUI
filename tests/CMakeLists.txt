@@ -105,4 +105,23 @@ target_link_libraries(test_integration
 
 add_test(NAME Integration COMMAND test_integration)
 
+# Main Workflow Integration Tests
+add_executable(test_main_workflow
+    integration/test_main_workflow.cpp
+)
+
+target_link_libraries(test_main_workflow
+    GTest::GTest
+    GTest::Main
+    test_common
+    nlohmann_json::nlohmann_json
+    yaml-cpp
+    Qt6::Core
+    Qt6::Gui
+    Qt6::Widgets
+    Qt6::Test
+)
+
+add_test(NAME MainWorkflow COMMAND test_main_workflow)
+
 # Run all tests with: ctest --output-on-failure

@@ -146,7 +146,11 @@ void ValidationFeedbackWidget::updateDisplay()
         container_layout->addWidget(frame);
     }
 
-    container_layout->addStretch();
+    // Add stretch if it's a box layout
+    if (auto* box_layout = qobject_cast<QBoxLayout*>(container_layout))
+    {
+        box_layout->addStretch();
+    }
 
     setHasFeedback(!feedback_items_.isEmpty());
 }

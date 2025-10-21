@@ -15,7 +15,7 @@ int main(int argc, char* argv[])
     QApplication::setApplicationDisplayName("Schema-Driven Configuration GUI");
 
     // Create and show main window
-    MainWindow window;
+    configgui::ui::MainWindow window;
     window.show();
 
     return app.exec();

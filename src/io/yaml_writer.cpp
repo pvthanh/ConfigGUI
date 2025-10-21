@@ -9,43 +9,43 @@
 namespace configgui {
 namespace io {
 
-Result<void> YamlWriter::writeFile(const std::string& file_path, const json& data)
+VoidResult YamlWriter::writeFile(const std::string& file_path, const json& data)
 {
     try
     {
         const auto yaml_result = toString(data);
-        if (!yaml_result.isOk())
+        if (yaml_result.is_failure())
         {
-            return Result<void>::Error(yaml_result.getError());
+            return VoidResult(yaml_result.error());
         }
 
         std::ofstream file(file_path);
         if (!file.is_open())
         {
-            return Result<void>::Error("Cannot open file for writing: " + file_path);
+            return VoidResult(Error{"Cannot open file for writing: " + file_path});
         }
 
-        file << yaml_result.getValue();
+        file << yaml_result.value();
         file.close();
 
-        return Result<void>::Ok();
+        return VoidResult(json::object());
     }
     catch (const std::exception& e)
     {
-        return Result<void>::Error(std::string("Failed to write YAML file: ") + e.what());
+        return VoidResult(Error{"Failed to write YAML file: " + std::string(e.what())});
     }
 }
 
-Result<std::string> YamlWriter::toString(const json& data)
+StringResult YamlWriter::toString(const json& data)
 {
     try
     {
         const auto yaml_str = jsonToYaml(data);
-        return Result<std::string>::Ok(yaml_str);
+        return StringResult(yaml_str);
     }
     catch (const std::exception& e)
     {
-        return Result<std::string>::Error(std::string("Failed to convert to YAML: ") + e.what());
+        return StringResult(Error{"Failed to convert to YAML: " + std::string(e.what())});
     }
 }
 
@@ -144,7 +144,7 @@ std::string YamlWriter::jsonToYaml(const json& value, int indent)
 
 std::string YamlWriter::getIndent(int level)
 {
-    return std::string(level, ' ');
+    return std::string(static_cast<size_t>(level), ' ');
 }
 
 } // namespace io

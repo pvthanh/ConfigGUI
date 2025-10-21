@@ -9,6 +9,8 @@
 #include <string>
 
 using json = nlohmann::json;
+using configgui::core::Result;
+using JsonResult = configgui::core::Result<nlohmann::json, std::string>;
 
 namespace configgui {
 namespace io {
@@ -27,14 +29,14 @@ public:
      * @param file_path Path to JSON file
      * @return Result containing parsed JSON or error
      */
-    static Result<json> readFile(const std::string& file_path);
+    static JsonResult readFile(const std::string& file_path);
 
     /**
      * @brief Read JSON from string
      * @param json_string JSON string content
      * @return Result containing parsed JSON or error
      */
-    static Result<json> readString(const std::string& json_string);
+    static JsonResult readString(const std::string& json_string);
 
 private:
     JsonReader() = default;

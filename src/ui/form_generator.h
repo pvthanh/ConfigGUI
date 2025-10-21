@@ -81,8 +81,10 @@ private:
     QVBoxLayout* layout_;
     QMap<QString, FieldWidget> field_widgets_;
     bool is_dirty_;
+    json schema_; // Store schema to rebuild nested structure
 
     void addFieldToForm(const QString& field_name, const json& field_schema);
+    void addSimpleFieldToForm(const QString& field_name, const json& field_schema);
     void updateFieldValue(const QString& field_name, const json& value);
 };
 

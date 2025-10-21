@@ -2,12 +2,13 @@
 // PatternValidator - Implementation
 
 #include "pattern_validator.h"
+#include <mutex>
 
 namespace configgui {
 namespace validators {
 
 // Initialize static members
-mutable std::shared_mutex PatternValidator::s_regex_cache_mutex;
+std::shared_mutex PatternValidator::s_regex_cache_mutex;
 std::unordered_map<std::string, std::shared_ptr<const std::regex>> PatternValidator::s_regex_cache;
 size_t PatternValidator::s_cache_lookups = 0;
 

@@ -38,14 +38,10 @@ ValidationErrors SchemaValidator::validate(const json& data) const
     {
         validator_->validate(data);
     }
-    catch (const nlohmann::json_schema::validation_error& /*e*/)
+    catch (const std::exception& e)
     {
         // Note: In production, parse the validation_error message for detailed field info
         errors.push_back(ValidationError("", ValidationErrorType::None, "Validation failed", ""));
-    }
-    catch (const std::exception& /*e*/)
-    {
-        // Unexpected error
     }
 
     return errors;
@@ -68,7 +64,7 @@ ValidationErrors SchemaValidator::validateField(const QString& field_name, const
         test_data[field_name.toStdString()] = value;
         validator_->validate(test_data);
     }
-    catch (const nlohmann::json_schema::validation_error& e)
+    catch (const std::exception& e)
     {
         errors.push_back(createError(field_name, ValidationErrorType::None, QString::fromStdString(e.what())));
     }
