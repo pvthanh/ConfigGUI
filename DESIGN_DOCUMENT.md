@@ -26,11 +26,11 @@ ConfigGUI implements a clean, modular 5-layer architecture:
 
 ```mermaid
 graph TD
-    A["🎯 Layer 5: Application Layer<br/>main.cpp, CLI/GUI entry points"]
-    B["🖼️  Layer 4: User Interface<br/>Qt6: MainWindow, FormGenerator"]
-    C["✅ Layer 3: Validation<br/>Validators, Processors"]
-    D["💾 Layer 2: Core Data Model<br/>Schema, Config, State, I/O"]
-    E["🔧 Layer 1: Utilities<br/>Logger, StringUtils, FileUtils"]
+    A["🎯 Layer 5: Application Layer<br>main.cpp, CLI/GUI entry points"]
+    B["🖼️  Layer 4: User Interface<br>Qt6: MainWindow, FormGenerator"]
+    C["✅ Layer 3: Validation<br>Validators, Processors"]
+    D["💾 Layer 2: Core Data Model<br>Schema, Config, State, I/O"]
+    E["🔧 Layer 1: Utilities<br>Logger, StringUtils, FileUtils"]
     
     A -->|depends on| B
     B -->|depends on| C
@@ -188,7 +188,7 @@ graph TB
 
 ```mermaid
 graph TD
-    IVA["IValidator<br/>+ validate<br/>+ getName"]
+    IVA["IValidator<br>+ validate<br>+ getName"]
     
     TV["TypeValidator"]
     RV["RangeValidator"]
@@ -202,17 +202,17 @@ graph TD
     IVA ---|implements| EV
     IVA ---|implements| REQ
     
-    JS["JSONSchema<br/>- schema_<br/>- validator_<br/>- property_index_<br/>+ raw_schema<br/>+ title<br/>+ hasProperty O(1)<br/>+ getProperty O(1)"]
+    JS["JSONSchema<br>- schema_<br>- validator_<br>- property_index_<br>+ raw_schema<br>+ title<br>+ hasProperty O(1)<br>+ getProperty O(1)"]
     
-    RESULT["Result&lt;T, E&gt;<br/>Template Error Handling<br/>- data_: variant<br/>+ is_success<br/>+ is_failure<br/>+ value<br/>+ error<br/>+ value_or"]
+    RESULT["Result T, E<br>Template Error Handling<br>- data_: variant<br>+ is_success<br>+ is_failure<br>+ value<br>+ error<br>+ value_or"]
     
-    VE["ValidationError<br/>- path_<br/>- message_<br/>- code_<br/>+ toString"]
+    VE["ValidationError<br>- path_<br>- message_<br>- code_<br>+ toString"]
     
-    CD["ConfigurationData<br/>- data_: json<br/>+ get<br/>+ set<br/>+ raw<br/>+ toJson<br/>+ toYaml"]
+    CD["ConfigurationData<br>- data_: json<br>+ get<br>+ set<br>+ raw<br>+ toJson<br>+ toYaml"]
     
-    IO["JSON/YAML I/O<br/>JsonReader | JsonWriter<br/>YamlReader | YamlWriter"]
+    IO["JSON/YAML I/O<br>JsonReader | JsonWriter<br>YamlReader | YamlWriter"]
     
-    FS["FormState<br/>- widget_states_<br/>- validation_state_<br/>+ setValue<br/>+ getValue<br/>+ hasChanges"]
+    FS["FormState<br>- widget_states_<br>- validation_state_<br>+ setValue<br>+ getValue<br>+ hasChanges"]
     
     style IVA fill:#c8e6c9,stroke:#1b5e20,stroke-width:2px
     style TV fill:#a5d6a7,stroke:#1b5e20,stroke-width:1px
@@ -739,10 +739,10 @@ graph TD
     A["👤 User modifies field"]
     B["📝 FormState detects change"]
     C["✔️ Validate field value"]
-    D["🎯 Run Validators:<br/>• TypeValidator<br/>• RangeValidator<br/>• PatternValidator<br/>• EnumValidator<br/>• RequiredValidator"]
-    E{"All<br/>Valid?"}
-    F["✅ Color Green<br/>✓ Clear status"]
-    G["❌ Color Red<br/>Show error message<br/>Disable Submit"]
+    D["🎯 Run Validators:<br>• TypeValidator<br>• RangeValidator<br>• PatternValidator<br>• EnumValidator<br>• RequiredValidator"]
+    E{"All<br>Valid?"}
+    F["✅ Color Green<br>✓ Clear status"]
+    G["❌ Color Red<br>Show error message<br>Disable Submit"]
     H["🔄 Update UI Feedback"]
     
     A --> B
@@ -770,14 +770,14 @@ graph TD
 graph TD
     A["💾 User clicks Save"]
     B["✔️ Validate ALL fields"]
-    C{"All<br/>Valid?"}
-    D["❌ Show Errors<br/>Prevent Save"]
+    C{"All<br>Valid?"}
+    D["❌ Show Errors<br>Prevent Save"]
     E["🎯 Collect config from FormState"]
-    F["🔄 Convert to format:<br/>JsonWriter/YamlWriter<br/>optimized with moves"]
+    F["🔄 Convert to format:<br>JsonWriter/YamlWriter<br>optimized with moves"]
     G["📁 Write to File"]
-    H{"Write<br/>Success?"}
-    I["✅ Success Message<br/>File Saved"]
-    J["❌ Error Dialog<br/>Check permissions"]
+    H{"Write<br>Success?"}
+    I["✅ Success Message<br>File Saved"]
+    J["❌ Error Dialog<br>Check permissions"]
     
     A --> B
     B --> C
@@ -811,34 +811,34 @@ graph TD
 graph TD
     MAIN["main.cpp"]
     
-    MW["MainWindow<br/>UI Layer"]
+    MW["MainWindow<br>UI Layer"]
     FG["FormGenerator"]
     WF["WidgetFactory"]
     VFW["ValidationFeedback"]
     IVA["IValidator"]
     
-    JS["JSONSchema<br/>Core"]
-    CFG["ConfigurationData<br/>Core"]
-    FS["FormState<br/>Core"]
-    JR["JsonReader/Writer<br/>I/O"]
-    YR["YamlReader/Writer<br/>I/O"]
+    JS["JSONSchema<br>Core"]
+    CFG["ConfigurationData<br>Core"]
+    FS["FormState<br>Core"]
+    JR["JsonReader/Writer<br>I/O"]
+    YR["YamlReader/Writer<br>I/O"]
     SV["SchemaValidator"]
     
-    RESULT["result.h<br/>Error Template"]
+    RESULT["result.h<br>Error Template"]
     VE["ValidationError"]
     ET["error_types.h"]
     
     TV["TypeValidator"]
     RV["RangeValidator"]
-    PV["PatternValidator<br/>Regex Cache"]
+    PV["PatternValidator<br>Regex Cache"]
     EV["EnumValidator"]
     REQ["RequiredValidator"]
     
-    LOG["Logger<br/>Singleton"]
+    LOG["Logger<br>Singleton"]
     STR["StringUtils"]
     FILE["FileUtils"]
     
-    QT["Qt 6.x<br/>Core, Gui, Widgets"]
+    QT["Qt 6.x<br>Core, Gui, Widgets"]
     JSON["nlohmann/json 3.11+"]
     JSVALIDATOR["json-schema-validator"]
     YAML["libyaml"]
