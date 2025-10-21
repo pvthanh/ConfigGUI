@@ -112,52 +112,6 @@ graph TB
     style CORE fill:#fff3e0,stroke:#e65100,stroke-width:2px
     style UTIL fill:#fce4ec,stroke:#880e4f,stroke-width:2px
 ```
-│                   CORE DATA MODEL LAYER                       │
-│  ┌──────────────────────────────────────────────────────┐    │
-│  │              Schema (JSONSchema)                     │    │
-│  │  • title, description                               │    │
-│  │  • properties (field definitions)                    │    │
-│  │  • required fields                                   │    │
-│  │  • field indexing (performance optimization)         │    │
-│  └──────────────────────────────────────────────────────┘    │
-│  ┌──────────────────────────────────────────────────────┐    │
-│  │       Configuration Data (ConfigurationData)         │    │
-│  │  • Loaded configuration values                       │    │
-│  │  • Type-safe access via Result<T>                    │    │
-│  │  • Move semantics for efficiency                     │    │
-│  └──────────────────────────────────────────────────────┘    │
-│  ┌──────────────────────────────────────────────────────┐    │
-│  │              Form State (FormState)                  │    │
-│  │  • Widget state tracking                             │    │
-│  │  • Change detection                                  │    │
-│  │  • Validation state                                  │    │
-│  └──────────────────────────────────────────────────────┘    │
-│  ┌──────────────────────────────────────────────────────┐    │
-│  │    I/O Layer (JSON/YAML Readers & Writers)           │    │
-│  │  ┌──────────────┐ ┌──────────────┐                   │    │
-│  │  │ JsonReader   │ │ JsonWriter   │ (optimized)       │    │
-│  │  ├──────────────┤ ├──────────────┤                   │    │
-│  │  │ YamlReader   │ │ YamlWriter   │                   │    │
-│  │  └──────────────┘ └──────────────┘                   │    │
-│  └──────────────────────────────────────────────────────┘    │
-│  ┌──────────────────────────────────────────────────────┐    │
-│  │         Error Handling (Result<T>, Errors)           │    │
-│  │  • Result<T, E> template for error handling          │    │
-│  │  • ValidationError with detailed messages            │    │
-│  │  • No exceptions (MISRA compliant)                   │    │
-│  └──────────────────────────────────────────────────────┘    │
-└─────────┬─────────────────────────────────────────────────────┘
-          │
-┌─────────▼─────────────────────────────────────────────────────┐
-│                   UTILITY/INFRA LAYER                         │
-│  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐         │
-│  │   Logger     │ │ StringUtils  │ │ FileUtils    │         │
-│  │              │ │              │ │              │         │
-│  │ • Multi-level│ │ • trim/split │ │ • exists()   │         │
-│  │   logging    │ │ • case conv. │ │ • read/write │         │
-│  │ • Formatting │ │ • replace    │ │ • metadata   │         │
-│  └──────────────┘ └──────────────┘ └──────────────┘         │
-└─────────────────────────────────────────────────────────────┘
 ```
 
 ---
