@@ -81,17 +81,17 @@ graph TB
     end
     
     subgraph CORE["💾 CORE DATA MODEL LAYER"]
-        SCH["JSONSchema"]
-        CFG["ConfigurationData"]
-        FS["FormState"]
-        IO["I/O Layer"]
-        ER["Error Handling"]
+        SCH["Schema (JSONSchema)<br/>• title, description<br/>• properties<br/>• required fields<br/>• field indexing"]
+        CFG["Configuration Data<br/>• Loaded values<br/>• Type-safe access<br/>• Move semantics"]
+        FS["Form State<br/>• Widget state<br/>• Change detection<br/>• Validation state"]
+        IO["I/O Layer<br/>• JsonReader/Writer<br/>• YamlReader/Writer"]
+        ER["Error Handling<br/>• Result&lt;T, E&gt;<br/>• ValidationError<br/>• No exceptions"]
     end
     
     subgraph UTIL["🔧 UTILITY/INFRA LAYER"]
-        LOG["Logger"]
-        STR["StringUtils"]
-        FILE["FileUtils"]
+        LOG["Logger<br/>• Multi-level<br/>• Formatting"]
+        STR["StringUtils<br/>• trim/split<br/>• case conv.<br/>• replace"]
+        FILE["FileUtils<br/>• exists()<br/>• read/write<br/>• metadata"]
     end
     
     APP -->|uses| UI
@@ -111,7 +111,6 @@ graph TB
     style PROC fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
     style CORE fill:#fff3e0,stroke:#e65100,stroke-width:2px
     style UTIL fill:#fce4ec,stroke:#880e4f,stroke-width:2px
-```
 ```
 
 ---
