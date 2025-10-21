@@ -187,45 +187,85 @@ graph TB
 ### Core Class Diagram
 
 ```mermaid
-graph TD
-    IVA["IValidator<br>+ validate<br>+ getName"]
+classDiagram
+    class IValidator {
+        <<Interface>>
+        +validate(value, schema) ValidationResult
+        +getName() string
+    }
+
+    class TypeValidator {
+        +validate(value, schema) ValidationResult
+    }
+    class RangeValidator {
+        +validate(value, schema) ValidationResult
+    }
+    class PatternValidator {
+        +validate(value, schema) ValidationResult
+    }
+    class EnumValidator {
+        +validate(value, schema) ValidationResult
+    }
+    class RequiredValidator {
+        +validate(value, schema) ValidationResult
+    }
+
+    IValidator <|-- TypeValidator
+    IValidator <|-- RangeValidator
+    IValidator <|-- PatternValidator
+    IValidator <|-- EnumValidator
+    IValidator <|-- RequiredValidator
+
+    class JSONSchema {
+        -schema_ : json
+        -property_index_ : unordered_set
+        +raw_schema() json
+        +title() QString
+        +hasProperty(name) bool
+        +getProperty(name) const json*
+    }
+
+    class Result~T, E~ {
+        <<Template>>
+        -data_ : variant~T, E~
+        +is_success() bool
+        +is_failure() bool
+        +value() T
+        +error() E
+    }
+
+    class ValidationError {
+        -field_ : QString
+        -type_ : ValidationErrorType
+        -message_ : QString
+        +to_string() string
+    }
+
+    class ConfigurationData {
+        -data_ : json
+        -field_states_ : map~QString, FieldState~
+        +get_value(field_name) QVariant
+        +set_value(field_name, value)
+        +add_error(field_name, error)
+    }
+
+    class FormState {
+        -has_validation_errors_ : bool
+        -has_unsaved_changes_ : bool
+        +is_valid() bool
+    }
     
-    TV["TypeValidator"]
-    RV["RangeValidator"]
-    PV["PatternValidator"]
-    EV["EnumValidator"]
-    REQ["RequiredValidator"]
-    
-    IVA ---|implements| TV
-    IVA ---|implements| RV
-    IVA ---|implements| PV
-    IVA ---|implements| EV
-    IVA ---|implements| REQ
-    
-    JS["JSONSchema<br>- schema_<br>- validator_<br>- property_index_<br>+ raw_schema<br>+ title<br>+ hasProperty O(1)<br>+ getProperty O(1)"]
-    
-    RESULT["Result T, E<br>Template Error Handling<br>- data_: variant<br>+ is_success<br>+ is_failure<br>+ value<br>+ error<br>+ value_or"]
-    
-    VE["ValidationError<br>- path_<br>- message_<br>- code_<br>+ toString"]
-    
-    CD["ConfigurationData<br>- data_: json<br>+ get<br>+ set<br>+ raw<br>+ toJson<br>+ toYaml"]
-    
-    IO["JSON/YAML I/O<br>JsonReader | JsonWriter<br>YamlReader | YamlWriter"]
-    
-    FS["FormState<br>- widget_states_<br>- validation_state_<br>+ setValue<br>+ getValue<br>+ hasChanges"]
-    
-    style IVA fill:#c8e6c9,stroke:#1b5e20,stroke-width:2px
-    style TV fill:#a5d6a7,stroke:#1b5e20,stroke-width:1px
-    style RV fill:#a5d6a7,stroke:#1b5e20,stroke-width:1px
-    style PV fill:#a5d6a7,stroke:#1b5e20,stroke-width:1px
-    style EV fill:#a5d6a7,stroke:#1b5e20,stroke-width:1px
-    style REQ fill:#a5d6a7,stroke:#1b5e20,stroke-width:1px
-    style JS fill:#ffe0b2,stroke:#e65100,stroke-width:2px
-    style RESULT fill:#f8bbd0,stroke:#880e4f,stroke-width:2px
-    style VE fill:#f8bbd0,stroke:#880e4f,stroke-width:2px
-    style CD fill:#fff9c4,stroke:#f57f17,stroke-width:2px
-    style IO fill:#b3e5fc,stroke:#01579b,stroke-width:2px
-    style FS fill:#d1c4e9,stroke:#311b92,stroke-width:2px
+    class IO {
+        <<Utility>>
+        +JsonReader::readFile(path) Result
+        +JsonWriter::writeFile(path, data) Result
+        +YamlReader::readFile(path) Result
+        +YamlWriter::writeFile(path, data) Result
+    }
+
+    JSONSchema ..> IValidator : uses
+    ConfigurationData "1" -- "0..*" ValidationError : contains
+    FormState -- "1" ConfigurationData : tracks
 ```
 
 ### Component Interaction Diagram
