@@ -9,24 +9,33 @@
 ## Problem Identified
 
 ### Issue Description
-The System Architecture Diagram section in DESIGN_DOCUMENT.md contained leftover ASCII art mixed with Mermaid code, causing rendering issues on GitHub.
+The DESIGN_DOCUMENT.md contained multiple instances of leftover ASCII art mixed with Mermaid code:
+1. ASCII art in the System Architecture section (CORE DATA MODEL LAYER)
+2. ASCII tree diagram for IValidator in Component Architecture section
+3. Duplicate content causing rendering issues on GitHub
 
 ### Root Cause
-During the Mermaid diagram conversion, the old ASCII art visualization for the CORE DATA MODEL LAYER section wasn't fully removed and was left in the markdown, breaking the Mermaid code block closure.
+During the Mermaid diagram conversion, multiple old ASCII art visualizations weren't fully removed:
+- Old decorative borders and boxes left in markdown
+- ASCII tree structure diagram for validator hierarchy
+- Duplicate content blocks from incomplete replacements
 
 ### Visual Impact
 - ❌ Garbled text display on GitHub
-- ❌ Broken formatting in the area
-- ❌ Unclean markdown source
+- ❌ Broken formatting in multiple sections
+- ❌ Unclean markdown source with mixed formats
+- ❌ Component Architecture section not rendering properly
 
 ---
 
 ## Solution Applied
 
 ### Fix Details
-**Location**: DESIGN_DOCUMENT.md, lines 100-160 (System Architecture section)
+**Locations**: Multiple sections in DESIGN_DOCUMENT.md
 
 **Changes Made**:
+
+**Fix 1 - System Architecture Section** (lines ~100-160):
 ```
 REMOVED:
 │                   CORE DATA MODEL LAYER                       │
@@ -36,48 +45,28 @@ REMOVED:
 │  │  • properties (field definitions)                    │    │
 │  │  • required fields                                   │    │
 │  │  • field indexing (performance optimization)         │    │
-│  └──────────────────────────────────────────────────────┘    │
-│  ┌──────────────────────────────────────────────────────┐    │
-│  │       Configuration Data (ConfigurationData)         │    │
-│  │  • Loaded configuration values                       │    │
-│  │  • Type-safe access via Result<T>                    │    │
-│  │  • Move semantics for efficiency                     │    │
-│  └──────────────────────────────────────────────────────┘    │
-│  ┌──────────────────────────────────────────────────────┐    │
-│  │              Form State (FormState)                  │    │
-│  │  • Widget state tracking                             │    │
-│  │  • Change detection                                  │    │
-│  │  • Validation state                                  │    │
-│  └──────────────────────────────────────────────────────┘    │
-│  ┌──────────────────────────────────────────────────────┐    │
-│  │    I/O Layer (JSON/YAML Readers & Writers)           │    │
-│  │  ┌──────────────┐ ┌──────────────┐                   │    │
-│  │  │ JsonReader   │ │ JsonWriter   │ (optimized)       │    │
-│  │  ├──────────────┤ ├──────────────┤                   │    │
-│  │  │ YamlReader   │ │ YamlWriter   │                   │    │
-│  │  └──────────────┘ └──────────────┘                   │    │
-│  └──────────────────────────────────────────────────────┘    │
-│  ┌──────────────────────────────────────────────────────┐    │
-│  │         Error Handling (Result<T>, Errors)           │    │
-│  │  • Result<T, E> template for error handling          │    │
-│  │  • ValidationError with detailed messages            │    │
-│  │  • No exceptions (MISRA compliant)                   │    │
-│  └──────────────────────────────────────────────────────┘    │
-└─────────┬─────────────────────────────────────────────────────┘
-          │
-┌─────────▼─────────────────────────────────────────────────────┐
-│                   UTILITY/INFRA LAYER                         │
-│  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐         │
-│  │   Logger     │ │ StringUtils  │ │ FileUtils    │         │
-│  │              │ │              │ │              │         │
-│  │ • Multi-level│ │ • trim/split │ │ • exists()   │         │
-│  │   logging    │ │ • case conv. │ │ • read/write │         │
-│  │ • Formatting │ │ • replace    │ │ • metadata   │         │
-│  └──────────────┘ └──────────────┘ └──────────────┘         │
-└─────────────────────────────────────────────────────────────┘
+[... 30+ more lines of ASCII art ...]
 ```
 
-**Result**: Clean Mermaid code block structure
+**Fix 2 - Component Architecture Section** (lines ~125-140):
+```
+REMOVED:
+IValidator (Abstract)
+     ▲
+     │
+     ├─ TypeValidator
+     ├─ RangeValidator
+     ├─ PatternValidator
+     ├─ EnumValidator
+     └─ RequiredValidator
+```
+
+**Fix 3 - Duplicate Content Cleanup**:
+- Removed duplicate "Layer 4: User Interface Layer" descriptions
+- Cleaned up malformed sections
+- Restored proper markdown structure
+
+**Result**: All ASCII art removed, clean Mermaid structure restored
 
 ---
 
@@ -101,11 +90,15 @@ REMOVED:
 
 ## Commit Information
 
-**Commit Hash**: `b2b6f53`  
-**Commit Message**: "Fix CORE DATA MODEL LAYER diagram rendering issue"  
+**Commits Made**:
+1. `b2b6f53` - Fix CORE DATA MODEL LAYER diagram rendering issue
+2. `807f348` - Add rendering fix report
+3. `13ae536` - Remove remaining ASCII art tree diagram from Component Architecture section
+
 **Changes**: 
-- 1 file modified (DESIGN_DOCUMENT.md)
-- ~50 lines removed (leftover ASCII art)
+- DESIGN_DOCUMENT.md: Multiple iterations to remove all ASCII art
+- ~60 lines removed (leftover ASCII art and duplicates)
+- Complete markdown cleanup
 
 ---
 
@@ -133,15 +126,14 @@ https://github.com/pvthanh/ConfigGUI/blob/master/DESIGN_DOCUMENT.md
 - ✅ No syntax errors
 - ✅ Professional appearance
 - ✅ Proper markdown formatting
-
----
-
-## Impact
+- ✅ All ASCII art removed (verified)
 
 ### What Was Fixed
-- Removed broken ASCII art mixed with Mermaid code
-- Cleaned up markdown structure
-- Restored proper diagram rendering
+- ✅ Removed CORE DATA MODEL ASCII art (~50 lines)
+- ✅ Removed IValidator tree diagram (10 lines)
+- ✅ Removed duplicate content (12 lines)
+- ✅ Cleaned up markdown structure
+- ✅ Restored proper diagram rendering
 
 ### Why It Matters
 - Documentation now displays correctly on GitHub
