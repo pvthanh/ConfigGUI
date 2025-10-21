@@ -24,31 +24,24 @@
 
 ConfigGUI implements a clean, modular 5-layer architecture:
 
-```
-┌─────────────────────────────────────────┐
-│  Layer 5: Application Layer             │
-│  (main.cpp, CLI/GUI entry points)       │
-└─────────────────────────────────────────┘
-                    ↓
-┌─────────────────────────────────────────┐
-│  Layer 4: User Interface Layer          │
-│  (Qt-based GUI: MainWindow, Form Gen)   │
-└─────────────────────────────────────────┘
-                    ↓
-┌─────────────────────────────────────────┐
-│  Layer 3: Processing/Validation Layer   │
-│  (Validators, Processors)               │
-└─────────────────────────────────────────┘
-                    ↓
-┌─────────────────────────────────────────┐
-│  Layer 2: Core Data Model Layer         │
-│  (Schema, Config, Validation, I/O)      │
-└─────────────────────────────────────────┘
-                    ↓
-┌─────────────────────────────────────────┐
-│  Layer 1: Utility/Infrastructure Layer  │
-│  (Logger, StringUtils, FileUtils)       │
-└─────────────────────────────────────────┘
+```mermaid
+graph TD
+    A["🎯 Layer 5: Application Layer<br/>main.cpp, CLI/GUI entry points"]
+    B["🖼️  Layer 4: User Interface<br/>Qt6: MainWindow, FormGenerator"]
+    C["✅ Layer 3: Validation<br/>Validators, Processors"]
+    D["💾 Layer 2: Core Data Model<br/>Schema, Config, State, I/O"]
+    E["🔧 Layer 1: Utilities<br/>Logger, StringUtils, FileUtils"]
+    
+    A -->|depends on| B
+    B -->|depends on| C
+    C -->|depends on| D
+    D -->|depends on| E
+    
+    style A fill:#e1f5ff,stroke:#01579b,stroke-width:2px,color:#000
+    style B fill:#f3e5f5,stroke:#4a148c,stroke-width:2px,color:#000
+    style C fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px,color:#000
+    style D fill:#fff3e0,stroke:#e65100,stroke-width:2px,color:#000
+    style E fill:#fce4ec,stroke:#880e4f,stroke-width:2px,color:#000
 ```
 
 ### Key Characteristics
@@ -63,41 +56,62 @@ ConfigGUI implements a clean, modular 5-layer architecture:
 
 ## System Architecture Diagram
 
+```mermaid
+graph TB
+    subgraph APP["🎯 APPLICATION LAYER"]
+        MAIN["main.cpp"]
+        CLIH["CLI Handler"]
+        CONF["Config Manager"]
+    end
+    
+    subgraph UI["🖼️ UI LAYER Qt6"]
+        MW["MainWindow"]
+        FG["FormGenerator"]
+        WF["WidgetFactory"]
+        VFW["ValidationFeedback"]
+    end
+    
+    subgraph PROC["✅ PROCESSING LAYER"]
+        IVA["IValidator<br/>Abstract"]
+        TV["TypeValidator"]
+        RV["RangeValidator"]
+        PV["PatternValidator<br/>Regex Cache"]
+        EV["EnumValidator"]
+        REQ["RequiredValidator"]
+    end
+    
+    subgraph CORE["💾 CORE DATA MODEL LAYER"]
+        SCH["JSONSchema"]
+        CFG["ConfigurationData"]
+        FS["FormState"]
+        IO["I/O Layer"]
+        ER["Error Handling"]
+    end
+    
+    subgraph UTIL["🔧 UTILITY/INFRA LAYER"]
+        LOG["Logger"]
+        STR["StringUtils"]
+        FILE["FileUtils"]
+    end
+    
+    APP -->|uses| UI
+    UI -->|uses| PROC
+    UI -->|uses| CORE
+    PROC -->|uses| CORE
+    CORE -->|uses| UTIL
+    
+    IVA ---|implements| TV
+    IVA ---|implements| RV
+    IVA ---|implements| PV
+    IVA ---|implements| EV
+    IVA ---|implements| REQ
+    
+    style APP fill:#e1f5ff,stroke:#01579b,stroke-width:2px
+    style UI fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    style PROC fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
+    style CORE fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    style UTIL fill:#fce4ec,stroke:#880e4f,stroke-width:2px
 ```
-┌────────────────────────────────────────────────────────────────┐
-│                     APPLICATION LAYER                          │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐         │
-│  │  main.cpp    │  │  CLI Handler │  │   Config    │         │
-│  │              │  │   Manager    │  │   Manager   │         │
-│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘         │
-└─────────┼──────────────────┼──────────────────┼─────────────────┘
-          │                  │                  │
-┌─────────▼──────────────────▼──────────────────▼─────────────────┐
-│                      UI LAYER (Qt6)                             │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐         │
-│  │ MainWindow   │  │FormGenerator │  │WidgetFactory│         │
-│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘         │
-│  ┌──────▼──────────────────▼──────────────────▼─────────┐     │
-│  │   ValidationFeedbackWidget                          │     │
-│  └──────┬───────────────────────────────────────────────┘     │
-└─────────┼─────────────────────────────────────────────────────┘
-          │
-┌─────────▼─────────────────────────────────────────────────────┐
-│                    PROCESSING LAYER                           │
-│  ┌────────────────────────────────────────────────────────┐   │
-│  │         Validator Framework (IValidator)              │   │
-│  │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐  │   │
-│  │  │  Type    │ │ Pattern  │ │  Range   │ │  Enum    │  │   │
-│  │  │Validator │ │Validator │ │Validator │ │Validator │  │   │
-│  │  └──────────┘ └──────────┘ └──────────┘ └──────────┘  │   │
-│  │  ┌──────────┐                                          │   │
-│  │  │ Required │                                          │   │
-│  │  │Validator │                                          │   │
-│  │  └──────────┘                                          │   │
-│  └────────────────────────────────────────────────────────┘   │
-└─────────┬─────────────────────────────────────────────────────┘
-          │
-┌─────────▼─────────────────────────────────────────────────────┐
 │                   CORE DATA MODEL LAYER                       │
 │  ┌──────────────────────────────────────────────────────┐    │
 │  │              Schema (JSONSchema)                     │    │
@@ -231,155 +245,138 @@ IValidator (Abstract)
 
 ### Core Class Diagram
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                     IValidator                          │
-│  ┌─────────────────────────────────────────────────┐   │
-│  │ + validate(value, schema) → ValidationResult    │   │
-│  │ + getName() → string                            │   │
-│  └─────────────────────────────────────────────────┘   │
-└────────────────┬────────────────────────────────────────┘
-                 │
-      ┌──────────┼──────────┬──────────┬──────────┐
-      ▼          ▼          ▼          ▼          ▼
-┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐
-│  Type    │ │ Pattern  │ │  Range   │ │  Enum    │ │ Required │
-│Validator │ │Validator │ │Validator │ │Validator │ │Validator │
-└──────────┘ └──────────┘ └──────────┘ └──────────┘ └──────────┘
-
-
-┌─────────────────────────────────────────────────────────┐
-│               JSONSchema (Core Data)                    │
-│  ┌─────────────────────────────────────────────────┐   │
-│  │ - schema_: json                                 │   │
-│  │ - validator_: shared_ptr<SchemaValidator>      │   │
-│  │ - property_index_: unordered_set (OPTIMIZATION)│   │
-│  ├─────────────────────────────────────────────────┤   │
-│  │ + raw_schema() → const json&                    │   │
-│  │ + title() → QString                             │   │
-│  │ + description() → QString                       │   │
-│  │ + required_fields() → vector<QString>           │   │
-│  │ + properties() → const json&                    │   │
-│  │ + hasProperty(name) → bool (O(1))              │   │
-│  │ + getProperty(name) → const json*              │   │
-│  │ - buildIndex()                                  │   │
-│  └─────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────┘
-
-
-┌─────────────────────────────────────────────────────────┐
-│            Result<T, E> (Error Handling)                │
-│  ┌─────────────────────────────────────────────────┐   │
-│  │ - data_: variant<T, E>                          │   │
-│  ├─────────────────────────────────────────────────┤   │
-│  │ + is_success() → bool                           │   │
-│  │ + is_failure() → bool                           │   │
-│  │ + value() & → T&         (lvalue ref)           │   │
-│  │ + value() const& → const T&  (const ref)        │   │
-│  │ + value() && → T&&       (rvalue ref - OPTIMIZATION) │   │
-│  │ + error() & → E&                                │   │
-│  │ + error() const& → const E&                     │   │
-│  │ + error() && → E&&       (rvalue ref - OPTIMIZATION) │   │
-│  │ + value_or(default) → T                         │   │
-│  └─────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────┘
-
-
-┌─────────────────────────────────────────────────────────┐
-│          ValidationError (Error Details)                │
-│  ┌─────────────────────────────────────────────────┐   │
-│  │ - path_: string (field path)                    │   │
-│  │ - message_: string                              │   │
-│  │ - code_: string                                 │   │
-│  ├─────────────────────────────────────────────────┤   │
-│  │ + path() → const string&                        │   │
-│  │ + message() → const string&                     │   │
-│  │ + code() → const string&                        │   │
-│  │ + toString() → string                           │   │
-│  └─────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────┘
-
-
-┌─────────────────────────────────────────────────────────┐
-│        ConfigurationData (Configuration Storage)        │
-│  ┌─────────────────────────────────────────────────┐   │
-│  │ - data_: json                                   │   │
-│  ├─────────────────────────────────────────────────┤   │
-│  │ + get(path) → Result<json>                      │   │
-│  │ + set(path, value) → Result<void>               │   │
-│  │ + raw() → const json&                           │   │
-│  │ + toJson() → string                             │   │
-│  │ + toYaml() → string                             │   │
-│  └─────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────┘
-
-
-┌─────────────────────────────────────────────────────────┐
-│            JSON/YAML I/O (File Operations)              │
-│  ┌─────────────────────────────────────────────────┐   │
-│  │    JsonReader         │      JsonWriter         │   │
-│  │  + readFile(path)     │   + writeFile(path)     │   │
-│  │    → Result<json>     │     → Result<void>      │   │
-│  │  + fromString(str)    │   + toString(data)      │   │
-│  │    → Result<json>     │     → Result<string>    │   │
-│  │                       │   (OPTIMIZED with moves)│   │
-│  ├─────────────────────────────────────────────────┤   │
-│  │    YamlReader         │      YamlWriter         │   │
-│  │  + readFile(path)     │   + writeFile(path)     │   │
-│  │    → Result<json>     │     → Result<void>      │   │
-│  │  + fromString(str)    │   + toString(data)      │   │
-│  │    → Result<json>     │     → Result<string>    │   │
-│  └─────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────┘
-
-
-┌─────────────────────────────────────────────────────────┐
-│         FormState (UI State Management)                 │
-│  ┌─────────────────────────────────────────────────┐   │
-│  │ - widget_states_: map<string, any>              │   │
-│  │ - validation_state_: map<string, bool>          │   │
-│  ├─────────────────────────────────────────────────┤   │
-│  │ + setValue(path, value) → void                  │   │
-│  │ + getValue(path) → any                          │   │
-│  │ + setValidationState(path, valid) → void        │   │
-│  │ + getValidationState(path) → bool               │   │
-│  │ + hasChanges() → bool                           │   │
-│  │ + getChanges() → map<string, any>               │   │
-│  │ + reset() → void                                │   │
-│  └─────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    IVA["IValidator<br/>+ validate<br/>+ getName"]
+    
+    TV["TypeValidator"]
+    RV["RangeValidator"]
+    PV["PatternValidator"]
+    EV["EnumValidator"]
+    REQ["RequiredValidator"]
+    
+    IVA ---|implements| TV
+    IVA ---|implements| RV
+    IVA ---|implements| PV
+    IVA ---|implements| EV
+    IVA ---|implements| REQ
+    
+    JS["JSONSchema<br/>- schema_<br/>- validator_<br/>- property_index_<br/>+ raw_schema<br/>+ title<br/>+ hasProperty O(1)<br/>+ getProperty O(1)"]
+    
+    RESULT["Result&lt;T, E&gt;<br/>Template Error Handling<br/>- data_: variant<br/>+ is_success<br/>+ is_failure<br/>+ value<br/>+ error<br/>+ value_or"]
+    
+    VE["ValidationError<br/>- path_<br/>- message_<br/>- code_<br/>+ toString"]
+    
+    CD["ConfigurationData<br/>- data_: json<br/>+ get<br/>+ set<br/>+ raw<br/>+ toJson<br/>+ toYaml"]
+    
+    IO["JSON/YAML I/O<br/>JsonReader | JsonWriter<br/>YamlReader | YamlWriter"]
+    
+    FS["FormState<br/>- widget_states_<br/>- validation_state_<br/>+ setValue<br/>+ getValue<br/>+ hasChanges"]
+    
+    style IVA fill:#c8e6c9,stroke:#1b5e20,stroke-width:2px
+    style TV fill:#a5d6a7,stroke:#1b5e20,stroke-width:1px
+    style RV fill:#a5d6a7,stroke:#1b5e20,stroke-width:1px
+    style PV fill:#a5d6a7,stroke:#1b5e20,stroke-width:1px
+    style EV fill:#a5d6a7,stroke:#1b5e20,stroke-width:1px
+    style REQ fill:#a5d6a7,stroke:#1b5e20,stroke-width:1px
+    style JS fill:#ffe0b2,stroke:#e65100,stroke-width:2px
+    style RESULT fill:#f8bbd0,stroke:#880e4f,stroke-width:2px
+    style VE fill:#f8bbd0,stroke:#880e4f,stroke-width:2px
+    style CD fill:#fff9c4,stroke:#f57f17,stroke-width:2px
+    style IO fill:#b3e5fc,stroke:#01579b,stroke-width:2px
+    style FS fill:#d1c4e9,stroke:#311b92,stroke-width:2px
 ```
 
-### Relationship Diagram
+### Component Interaction Diagram
 
-```
-Application Layer
-       │
-       │ uses
-       ▼
-   UI Components ◄─── WidgetFactory (Factory Pattern)
-       │
-       │ uses
-       ▼
-   FormGenerator ◄─── IValidator (Strategy Pattern)
-       │                      ▲
-       │ uses                 │ implements
-       ▼                       │
-   Core Models ◄─── (5 Validators)
-   │    │    │
-   │    │    │
-   ▼    ▼    ▼
-Schema Config FormState  ◄─── JSON/YAML I/O
-   │              ▲
-   │              │ uses
-   │              │
-   └──────┬───────┘
-          │
-          ▼
-   Error Handling (Result<T, E>)
-          │
-          ▼
-   Utility Layer (Logger, StringUtils, FileUtils)
+```mermaid
+graph TB
+    subgraph APP["APPLICATION LAYER"]
+        MAIN["🎯 main.cpp"]
+    end
+    
+    subgraph UI["UI LAYER"]
+        MW["🖼️ MainWindow"]
+        FG["📝 FormGenerator"]
+        WF["🏭 WidgetFactory"]
+        VFW["✔️ ValidationFeedback"]
+    end
+    
+    subgraph VAL["VALIDATION LAYER"]
+        IVA["🎯 IValidator"]
+        TV["📊 TypeValidator"]
+        RV["📏 RangeValidator"]
+        PV["🔤 PatternValidator"]
+        EV["📋 EnumValidator"]
+        REQ["✓ RequiredValidator"]
+    end
+    
+    subgraph CORE["CORE DATA LAYER"]
+        JS["📚 JSONSchema"]
+        CFG["💾 ConfigData"]
+        FS["📝 FormState"]
+        IO["🔄 I/O Layer"]
+        ERR["❌ Error Handling"]
+    end
+    
+    subgraph UTIL["UTILITY LAYER"]
+        LOG["📋 Logger"]
+        STR["🔤 StringUtils"]
+        FILE["📁 FileUtils"]
+    end
+    
+    MAIN -->|creates| MW
+    MW -->|uses| FG
+    MW -->|uses| VFW
+    FG -->|creates widgets| WF
+    FG -->|validates| IVA
+    WF -->|fills with| CFG
+    
+    IVA -->|calls| TV
+    IVA -->|calls| RV
+    IVA -->|calls| PV
+    IVA -->|calls| EV
+    IVA -->|calls| REQ
+    
+    TV -->|uses| FS
+    RV -->|uses| FS
+    PV -->|uses| FS
+    EV -->|uses| FS
+    REQ -->|uses| FS
+    
+    FS -->|reads| JS
+    FS -->|reads| CFG
+    TV -->|handles| ERR
+    RV -->|handles| ERR
+    PV -->|handles| ERR
+    EV -->|handles| ERR
+    REQ -->|handles| ERR
+    
+    IO -->|reads/writes| JS
+    IO -->|reads/writes| CFG
+    IO -->|uses| LOG
+    PV -->|uses| STR
+    IO -->|uses| FILE
+    
+    style MAIN fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#000
+    style MW fill:#f3e5f5,stroke:#4a148c,stroke-width:2px,color:#000
+    style FG fill:#f3e5f5,stroke:#4a148c,stroke-width:2px,color:#000
+    style WF fill:#f3e5f5,stroke:#4a148c,stroke-width:2px,color:#000
+    style VFW fill:#f3e5f5,stroke:#4a148c,stroke-width:2px,color:#000
+    style IVA fill:#c8e6c9,stroke:#1b5e20,stroke-width:2px,color:#000
+    style TV fill:#a5d6a7,stroke:#1b5e20,stroke-width:1px,color:#000
+    style RV fill:#a5d6a7,stroke:#1b5e20,stroke-width:1px,color:#000
+    style PV fill:#a5d6a7,stroke:#1b5e20,stroke-width:1px,color:#000
+    style EV fill:#a5d6a7,stroke:#1b5e20,stroke-width:1px,color:#000
+    style REQ fill:#a5d6a7,stroke:#1b5e20,stroke-width:1px,color:#000
+    style JS fill:#fff3e0,stroke:#e65100,stroke-width:2px,color:#000
+    style CFG fill:#fff3e0,stroke:#e65100,stroke-width:2px,color:#000
+    style FS fill:#fff3e0,stroke:#e65100,stroke-width:2px,color:#000
+    style IO fill:#fff3e0,stroke:#e65100,stroke-width:2px,color:#000
+    style ERR fill:#f8bbd0,stroke:#880e4f,stroke-width:2px,color:#000
+    style LOG fill:#fce4ec,stroke:#880e4f,stroke-width:2px,color:#000
+    style STR fill:#fce4ec,stroke:#880e4f,stroke-width:2px,color:#000
+    style FILE fill:#fce4ec,stroke:#880e4f,stroke-width:2px,color:#000
 ```
 
 ---
@@ -757,130 +754,110 @@ public:
 
 ### Configuration Loading Flow
 
-```
-┌─────────────────────────────────────────────────┐
-│  1. User selects configuration file             │
-└──────────────────────┬──────────────────────────┘
-                       ▼
-┌─────────────────────────────────────────────────┐
-│  2. File I/O Layer reads file                   │
-│     JsonReader/YamlReader                       │
-│     Returns: Result<json>                       │
-└──────────────────────┬──────────────────────────┘
-                       │
-           ┌───────────┴───────────┐
-           ▼                       ▼
-      Success                    Failure
-           │                       │
-           ▼                       ▼
-┌──────────────────┐   ┌──────────────────┐
-│  3. Load Schema  │   │  Show Error      │
-│     (if needed)  │   │  Dialog          │
-└────────┬─────────┘   └──────────────────┘
-         │
-         ▼
-┌──────────────────────────────┐
-│  4. Validate config against  │
-│     schema                   │
-│     Validator Framework      │
-└────────┬─────────────────────┘
-         │
-    ┌────┴─────┐
-    ▼          ▼
-  Valid      Invalid
-    │          │
-    ▼          ▼
-┌────────┐ ┌──────────────┐
-│  5a.   │ │  5b. Display │
-│  Store │ │  Validation  │
-│  config│ │  Errors      │
-└────────┘ └──────────────┘
-    │
-    ▼
-┌─────────────────────────────┐
-│  6. Populate UI with values │
-│     FormGenerator           │
-│     WidgetFactory           │
-└─────────────────────────────┘
+```mermaid
+graph TD
+    A["🎯 User selects config file"]
+    B["📖 File I/O: JsonReader/YamlReader"]
+    C{"Success?"}
+    D["✅ Load Schema if needed"]
+    E["❌ Show Error Dialog"]
+    F["✔️ Validate config against schema"]
+    G{"Valid?"}
+    H["💾 Store Configuration"]
+    I["⚠️ Display Validation Errors"]
+    J["🖼️ Populate UI with Values"]
+    K["✨ Ready to Edit"]
+    
+    A --> B
+    B --> C
+    C -->|Yes| D
+    C -->|No| E
+    D --> F
+    F --> G
+    G -->|Valid| H
+    G -->|Invalid| I
+    H --> J
+    I --> J
+    J --> K
+    
+    style A fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    style B fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    style D fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
+    style E fill:#ffebee,stroke:#c62828,stroke-width:2px
+    style F fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    style H fill:#e0f2f1,stroke:#00796b,stroke-width:2px
+    style I fill:#fce4ec,stroke:#ad1457,stroke-width:2px
+    style J fill:#f1f8e9,stroke:#689f38,stroke-width:2px
+    style K fill:#e0f2f1,stroke:#00897b,stroke-width:2px
 ```
 
 ### Validation Flow
 
-```
-┌──────────────────────────┐
-│  1. User modifies field  │
-└──────────────┬───────────┘
-               ▼
-┌──────────────────────────┐
-│  2. FormState detects    │
-│     change               │
-└──────────────┬───────────┘
-               ▼
-┌──────────────────────────────────────────┐
-│  3. Validate against schema              │
-│     IValidator implementations:          │
-│     • TypeValidator                      │
-│     • RangeValidator                     │
-│     • PatternValidator (cached regex)    │
-│     • EnumValidator                      │
-│     • RequiredValidator                  │
-└──────────────┬───────────────────────────┘
-               │
-    ┌──────────┴──────────┐
-    ▼                     ▼
-  Valid                 Invalid
-    │                     │
-    ▼                     ▼
-┌────────────┐  ┌──────────────────────┐
-│  Color:    │  │  1. Show error label │
-│  Green     │  │  2. Color red        │
-│  Clear     │  │  3. Disable submit   │
-│  status    │  │  4. Store error      │
-└────────────┘  └──────────────────────┘
+```mermaid
+graph TD
+    A["👤 User modifies field"]
+    B["📝 FormState detects change"]
+    C["✔️ Validate field value"]
+    D["🎯 Run Validators:<br/>• TypeValidator<br/>• RangeValidator<br/>• PatternValidator<br/>• EnumValidator<br/>• RequiredValidator"]
+    E{"All<br/>Valid?"}
+    F["✅ Color Green<br/>✓ Clear status"]
+    G["❌ Color Red<br/>Show error message<br/>Disable Submit"]
+    H["🔄 Update UI Feedback"]
+    
+    A --> B
+    B --> C
+    C --> D
+    D --> E
+    E -->|Valid| F
+    E -->|Invalid| G
+    F --> H
+    G --> H
+    
+    style A fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    style B fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    style C fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
+    style D fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    style E fill:#fce4ec,stroke:#ad1457,stroke-width:2px
+    style F fill:#c8e6c9,stroke:#1b5e20,stroke-width:2px
+    style G fill:#ffcdd2,stroke:#b71c1c,stroke-width:2px
+    style H fill:#d1c4e9,stroke:#4527a0,stroke-width:2px
 ```
 
 ### Save/Export Flow
 
-```
-┌──────────────────────────┐
-│  1. User clicks Save     │
-└──────────────┬───────────┘
-               ▼
-┌────────────────────────────────┐
-│  2. Validate all fields        │
-│     against schema             │
-└──────────────┬────────────────┘
-               │
-    ┌──────────┴──────────┐
-    ▼                     ▼
-  Valid                 Invalid
-    │                     │
-    ▼                     ▼
-┌─────────────────────┐ ┌──────────────────┐
-│  3. Collect config  │ │  Show errors,    │
-│     from FormState  │ │  prevent save    │
-└──────────┬──────────┘ └──────────────────┘
-           ▼
-┌──────────────────────────────┐
-│  4. Convert to target format │
-│     JsonWriter/YamlWriter    │
-│     (optimized with moves)   │
-└──────────┬───────────────────┘
-           ▼
-┌──────────────────────────────┐
-│  5. Write to file            │
-│     FileUtils/I/O Layer      │
-└──────────┬───────────────────┘
-           │
-    ┌──────┴──────┐
-    ▼             ▼
-Success        Failure
-    │             │
-    ▼             ▼
-┌──────────┐  ┌─────────────┐
-│  Success │  │  Show error │
-│  Message │  │  dialog     │
-└──────────┘  └─────────────┘
+```mermaid
+graph TD
+    A["💾 User clicks Save"]
+    B["✔️ Validate ALL fields"]
+    C{"All<br/>Valid?"}
+    D["❌ Show Errors<br/>Prevent Save"]
+    E["🎯 Collect config from FormState"]
+    F["🔄 Convert to format:<br/>JsonWriter/YamlWriter<br/>optimized with moves"]
+    G["📁 Write to File"]
+    H{"Write<br/>Success?"}
+    I["✅ Success Message<br/>File Saved"]
+    J["❌ Error Dialog<br/>Check permissions"]
+    
+    A --> B
+    B --> C
+    C -->|Invalid| D
+    C -->|Valid| E
+    E --> F
+    F --> G
+    G --> H
+    H -->|Success| I
+    H -->|Failure| J
+    
+    style A fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    style B fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
+    style C fill:#fce4ec,stroke:#ad1457,stroke-width:2px
+    style D fill:#ffcdd2,stroke:#b71c1c,stroke-width:2px
+    style E fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    style F fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    style G fill:#e0f2f1,stroke:#00796b,stroke-width:2px
+    style H fill:#fce4ec,stroke:#ad1457,stroke-width:2px
+    style I fill:#c8e6c9,stroke:#1b5e20,stroke-width:2px
+    style J fill:#ffcdd2,stroke:#b71c1c,stroke-width:2px
 ```
 
 ---
@@ -889,60 +866,136 @@ Success        Failure
 
 ### Dependency Graph
 
+```mermaid
+graph TD
+    MAIN["main.cpp"]
+    
+    MW["MainWindow<br/>UI Layer"]
+    FG["FormGenerator"]
+    WF["WidgetFactory"]
+    VFW["ValidationFeedback"]
+    IVA["IValidator"]
+    
+    JS["JSONSchema<br/>Core"]
+    CFG["ConfigurationData<br/>Core"]
+    FS["FormState<br/>Core"]
+    JR["JsonReader/Writer<br/>I/O"]
+    YR["YamlReader/Writer<br/>I/O"]
+    SV["SchemaValidator"]
+    
+    RESULT["result.h<br/>Error Template"]
+    VE["ValidationError"]
+    ET["error_types.h"]
+    
+    TV["TypeValidator"]
+    RV["RangeValidator"]
+    PV["PatternValidator<br/>Regex Cache"]
+    EV["EnumValidator"]
+    REQ["RequiredValidator"]
+    
+    LOG["Logger<br/>Singleton"]
+    STR["StringUtils"]
+    FILE["FileUtils"]
+    
+    QT["Qt 6.x<br/>Core, Gui, Widgets"]
+    JSON["nlohmann/json 3.11+"]
+    JSVALIDATOR["json-schema-validator"]
+    YAML["libyaml"]
+    
+    MAIN --> MW
+    MAIN --> MW
+    MW --> FG
+    MW --> VFW
+    FG --> WF
+    FG --> IVA
+    
+    MAIN --> JS
+    MAIN --> CFG
+    MAIN --> FS
+    MAIN --> JR
+    MAIN --> YR
+    MAIN --> SV
+    
+    TV --> RESULT
+    RV --> RESULT
+    PV --> RESULT
+    EV --> RESULT
+    REQ --> RESULT
+    
+    TV --> VE
+    RV --> VE
+    PV --> VE
+    EV --> VE
+    REQ --> VE
+    
+    JS --> JSON
+    CFG --> JSON
+    JR --> JSON
+    YR --> JSON
+    YR --> YAML
+    
+    RESULT --> ET
+    VE --> ET
+    
+    PV --> STR
+    JR --> LOG
+    YR --> LOG
+    
+    MW --> QT
+    VFW --> QT
+    
+    SV --> JSVALIDATOR
+    
+    style MAIN fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#000
+    style MW fill:#f3e5f5,stroke:#4a148c,stroke-width:2px,color:#000
+    style FG fill:#f3e5f5,stroke:#4a148c,stroke-width:2px,color:#000
+    style WF fill:#f3e5f5,stroke:#4a148c,stroke-width:2px,color:#000
+    style VFW fill:#f3e5f5,stroke:#4a148c,stroke-width:2px,color:#000
+    style IVA fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px,color:#000
+    style TV fill:#c8e6c9,stroke:#1b5e20,stroke-width:1px,color:#000
+    style RV fill:#c8e6c9,stroke:#1b5e20,stroke-width:1px,color:#000
+    style PV fill:#c8e6c9,stroke:#1b5e20,stroke-width:1px,color:#000
+    style EV fill:#c8e6c9,stroke:#1b5e20,stroke-width:1px,color:#000
+    style REQ fill:#c8e6c9,stroke:#1b5e20,stroke-width:1px,color:#000
+    style JS fill:#fff3e0,stroke:#e65100,stroke-width:2px,color:#000
+    style CFG fill:#fff3e0,stroke:#e65100,stroke-width:2px,color:#000
+    style FS fill:#fff3e0,stroke:#e65100,stroke-width:2px,color:#000
+    style JR fill:#fff3e0,stroke:#e65100,stroke-width:2px,color:#000
+    style YR fill:#fff3e0,stroke:#e65100,stroke-width:2px,color:#000
+    style SV fill:#fff3e0,stroke:#e65100,stroke-width:2px,color:#000
+    style RESULT fill:#f8bbd0,stroke:#880e4f,stroke-width:2px,color:#000
+    style VE fill:#f8bbd0,stroke:#880e4f,stroke-width:2px,color:#000
+    style ET fill:#f8bbd0,stroke:#880e4f,stroke-width:2px,color:#000
+    style LOG fill:#fce4ec,stroke:#880e4f,stroke-width:2px,color:#000
+    style STR fill:#fce4ec,stroke:#880e4f,stroke-width:2px,color:#000
+    style FILE fill:#fce4ec,stroke:#880e4f,stroke-width:2px,color:#000
+    style QT fill:#b3e5fc,stroke:#01579b,stroke-width:2px,color:#000
+    style JSON fill:#ffe0b2,stroke:#e65100,stroke-width:2px,color:#000
+    style JSVALIDATOR fill:#ffe0b2,stroke:#e65100,stroke-width:2px,color:#000
+    style YAML fill:#ffe0b2,stroke:#e65100,stroke-width:2px,color:#000
 ```
-main.cpp
-    │
-    ├─► MainWindow (UI Layer)
-    │       │
-    │       ├─► FormGenerator
-    │       │       ├─► WidgetFactory
-    │       │       └─► IValidator (all 5)
-    │       │
-    │       └─► ValidationFeedbackWidget
-    │
-    └─► Application Manager
-            │
-            ├─► JSONSchema (Core)
-            ├─► ConfigurationData (Core)
-            ├─► FormState (Core)
-            ├─► JsonReader/Writer (I/O)
-            ├─► YamlReader/Writer (I/O)
-            ├─► SchemaValidator
-            └─► IValidator (all 5)
 
-Validators (Processing Layer)
-    │
-    └─► result.h (error handling)
-    └─► ValidationError
-    └─► StringUtils (utility)
-    └─► PatternValidator uses cache (optimization)
+### Dependency Characteristics
 
-Core Layer
-    │
-    ├─► result.h (error template)
-    ├─► ValidationError
-    ├─► error_types.h
-    └─► json library (nlohmann)
-
-Utility Layer
-    │
-    ├─► Logger (singleton)
-    ├─► StringUtils
-    └─► FileUtils
-
-External Dependencies
-    │
-    ├─► Qt 6.x (Core, Gui, Widgets)
-    ├─► nlohmann/json 3.11+
-    ├─► json-schema-validator
-    └─► libyaml
-```
-
-### No Circular Dependencies
-✅ Confirmed architecture prevents circular dependencies:
+✅ **No Circular Dependencies**: 
+- Confirmed architecture prevents circular dependencies
 - Upper layers depend on lower layers
 - Lower layers never depend on upper layers
-- All dependencies flow downward
+- All dependencies flow strictly downward
+
+📊 **Dependency Count**:
+- Application Layer: 3 direct dependencies
+- UI Layer: 4 direct dependencies  
+- Processing Layer: 3 direct dependencies
+- Core Layer: 4 direct dependencies
+- Utility Layer: 3 direct dependencies
+- External: 4 external libraries
+
+🎯 **Dependency Management**:
+- Minimal coupling between layers
+- Maximum cohesion within layers
+- Clear dependency direction
+- Testability maintained through isolation
 
 ---
 
