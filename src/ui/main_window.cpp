@@ -18,6 +18,7 @@
 #include <QTextStream>
 #include <QFileInfo>
 #include <QScrollArea>
+#include <QScrollBar>
 #include <nlohmann/json.hpp>
 
 namespace configgui {
@@ -218,6 +219,8 @@ void MainWindow::loadSchema(const QString& file_path)
             }
             if (scroll_area_)
             {
+                // Reset scroll position to top
+                scroll_area_->verticalScrollBar()->setValue(0);
                 scroll_area_->show();
             }
             form_generator_->show();

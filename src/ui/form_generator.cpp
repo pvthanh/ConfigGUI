@@ -342,6 +342,10 @@ void FormGenerator::clearForm()
 
     field_widgets_.clear();
     is_dirty_ = false;
+    
+    // Force layout update
+    update();
+    updateGeometry();
 }
 
 void FormGenerator::onFieldChanged()
