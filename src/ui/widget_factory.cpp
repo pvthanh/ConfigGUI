@@ -19,6 +19,11 @@ QWidget* WidgetFactory::createWidget(const json& schema, QWidget* parent)
     switch (field_type)
     {
         case FieldType::String:
+            // Check if it's an enum string
+            if (schema.contains("enum"))
+            {
+                return createEnumWidget(schema, parent);
+            }
             return createStringWidget(schema, parent);
         case FieldType::Integer:
             return createIntegerWidget(schema, parent);
@@ -26,15 +31,66 @@ QWidget* WidgetFactory::createWidget(const json& schema, QWidget* parent)
             return createNumberWidget(schema, parent);
         case FieldType::Boolean:
             return createBooleanWidget(schema, parent);
+        case FieldType::Array:
+            // Array could be an enum (strings in array) or actual array of items
+            if (schema.contains("enum"))
+            {
+                return createEnumWidget(schema, parent);
+            }
+            // For non-enum arrays, check if it's an array of simple types
+            if (schema.contains("items"))
+            {
+                const auto& items = schema["items"];
+                if (items.contains("enum"))
+                {
+                    // Array of enums - create combo box for the single selection or text area for multi
+                    return createStringWidget(schema, parent);
+                }
+                if (items.is_object() && items.contains("type"))
+                {
+                    const auto item_type = items["type"].get<std::string>();
+                    if (item_type == "string")
+                    {
+                        // Array of strings - treat as multi-line text
+                        auto* widget = new QLineEdit(parent);
+                        widget->setPlaceholderText("Comma-separated values");
+                        return widget;
+                    }
+                }
+            }
+            // For other arrays, treat as text input with placeholder
+            {
+                auto* widget = new QLineEdit(parent);
+                widget->setPlaceholderText("Array input");
+                return widget;
+            }
         default:
-            return new QWidget(parent);
+            // For Object and Unknown types, return nullptr to skip
+            return nullptr;
     }
 }
 
 FieldType WidgetFactory::getFieldType(const json& schema) const
 {
+    // First check if it has enum - enums should use ComboBox regardless of type
+    if (schema.contains("enum") && schema["enum"].is_array() && schema["enum"].size() > 0)
+    {
+        return FieldType::Array; // Array type indicates enum/combo box
+    }
+
+    // If no type field, try to infer or return Unknown
     if (!schema.contains("type"))
     {
+        // If it has additionalProperties, it's likely an object
+        if (schema.contains("additionalProperties"))
+        {
+            return FieldType::Object;
+        }
+        // If it has properties, it's an object
+        if (schema.contains("properties"))
+        {
+            return FieldType::Object;
+        }
         return FieldType::Unknown;
     }
 
@@ -42,10 +98,6 @@ FieldType WidgetFactory::getFieldType(const json& schema) const
 
     if (type_str == "string")
     {
-        if (schema.contains("enum"))
-        {
-            return FieldType::Array; // Treated as enum
-        }
         return FieldType::String;
     }
     if (type_str == "integer")

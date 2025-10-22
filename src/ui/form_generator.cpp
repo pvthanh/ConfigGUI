@@ -5,7 +5,9 @@
 #include "widget_factory.h"
 #include <QLineEdit>
 #include <QSpinBox>
+#include <QDoubleSpinBox>
 #include <QCheckBox>
+#include <QComboBox>
 #include <QLabel>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -81,6 +83,29 @@ void FormGenerator::addFieldToForm(const QString& field_name, const json& field_
 
 void FormGenerator::addSimpleFieldToForm(const QString& field_name, const json& field_schema)
 {
+    // Create input widget
+    WidgetFactory factory;
+    QWidget* widget = factory.createWidget(field_schema);
+
+    // Skip if widget creation returned empty widget or nullptr
+    if (widget == nullptr)
+    {
+        return;
+    }
+
+    // Check if it's just an empty QWidget (used for Object/Unknown types we can't handle)
+    auto* empty_widget = qobject_cast<QWidget*>(widget);
+    if (empty_widget && !qobject_cast<QLineEdit*>(widget) &&
+        !qobject_cast<QSpinBox*>(widget) &&
+        !qobject_cast<QDoubleSpinBox*>(widget) &&
+        !qobject_cast<QCheckBox*>(widget) &&
+        !qobject_cast<QComboBox*>(widget))
+    {
+        // It's a generic empty QWidget for unsupported types
+        widget->deleteLater();
+        return;
+    }
+
     // Create horizontal layout for label and widget
     auto* h_layout = new QHBoxLayout();
 
@@ -88,15 +113,6 @@ void FormGenerator::addSimpleFieldToForm(const QString& field_name, const json& 
     auto* label = new QLabel(field_name + ":");
     label->setMinimumWidth(150);
     h_layout->addWidget(label);
-
-    // Create input widget
-    WidgetFactory factory;
-    QWidget* widget = factory.createWidget(field_schema);
-
-    if (widget == nullptr)
-    {
-        widget = new QWidget();
-    }
 
     h_layout->addWidget(widget);
     h_layout->addStretch();
@@ -125,6 +141,11 @@ void FormGenerator::addSimpleFieldToForm(const QString& field_name, const json& 
     else if (auto* check_box = qobject_cast<QCheckBox*>(widget))
     {
         connect(check_box, &QCheckBox::stateChanged, this, &FormGenerator::onFieldChanged);
+    }
+    else if (auto* combo_box = qobject_cast<QComboBox*>(widget))
+    {
+        connect(combo_box, QOverload<int>::of(&QComboBox::currentIndexChanged),
+                this, &FormGenerator::onFieldChanged);
     }
 }
 

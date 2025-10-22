@@ -1,0 +1,245 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://pvthanh.github.io/navteq-validator/config.schema.json",
+  "title": "navteq-validator configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "$id": { "type": "string" },
+    "mode": {
+      "description": "Validation mode when running with --config",
+      "type": "string",
+      "enum": ["auto", "rdf", "shapefiles", "3d-landmarks"]
+    },
+    "dataPath": {
+      "description": "Root path to the dataset to validate (when using --config)",
+      "type": "string"
+    },
+    "rules": {
+      "description": "Explicit list of rules to run (overrides auto rules for the chosen mode)",
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "log": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "level": {
+          "type": "string",
+          "enum": ["trace", "debug", "info", "warn", "error", "critical", "off"]
+        },
+        "file": { "type": "string" },
+        "configPath": { "type": "string" }
+      }
+    },
+    "autoRules": {
+      "description": "Mapping from folder-name patterns to rule lists; 'default' applies when no pattern matches.",
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": { "type": "string" }
+      }
+    },
+    "rootRules": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "parallelism": { "type": "integer", "minimum": 1 },
+    "parallelismByMode": {
+      "type": "object",
+      "additionalProperties": { "type": "integer", "minimum": 1 }
+    },
+    "maxTasksInFlight": { "type": "integer", "minimum": 1 },
+    "report": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "json": { "type": "string" },
+        "csv": { "type": "string" }
+      }
+    },
+    "alerts": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "configPath": { "type": "string" }
+      }
+    },
+    "configureRules": {
+      "type": "object",
+      "description": "Per-rule configuration. Unknown rule names are allowed.",
+      "additionalProperties": { "type": "object" },
+      "properties": {
+        "GeometryEquivalenceRule": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "fieldName": { "type": "string" },
+            "tolerance": { "type": "number", "minimum": 0 }
+          }
+        },
+        "ShapefilePrjRule": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "acceptedTokens": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        },
+        "3DFileCompletenessRule": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "requiredSuffixes": {
+              "type": "array",
+              "items": { "type": "string" },
+              "minItems": 1
+            },
+            "searchRecursively": { "type": "boolean" }
+          }
+        },
+        "ShapefileCompletenessRule": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "requiredComponents": {
+              "type": "array",
+              "items": { "type": "string" },
+              "minItems": 1
+            },
+            "caseSensitive": { "type": "boolean" }
+          }
+        },
+        "ObjMtlReferenceRule": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "expectedMtlExtension": { "type": "string" },
+            "caseSensitive": { "type": "boolean" },
+            "allowMissingMtllib": { "type": "boolean" }
+          }
+        },
+        "BuildingTableRule": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "require_sdo_or_wkt": { "type": "boolean" },
+            "expectedHeaders": {
+              "type": "array",
+              "items": { "type": "string" },
+              "minItems": 1
+            }
+          }
+        },
+        "LinksGeometryRule": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "require_sdo_or_wkt": { "type": "boolean" },
+            "expectedHeaders": {
+              "type": "array",
+              "items": { "type": "string" },
+              "minItems": 1
+            }
+          }
+        },
+        "PoiTableRule": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "latitude_range": {
+              "type": "array",
+              "items": { "type": "number" },
+              "minItems": 2,
+              "maxItems": 2
+            },
+            "longitude_range": {
+              "type": "array",
+              "items": { "type": "number" },
+              "minItems": 2,
+              "maxItems": 2
+            },
+            "expectedHeaders": {
+              "type": "array",
+              "items": { "type": "string" },
+              "minItems": 1
+            }
+          }
+        },
+        "RdfIntegrityRule": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "check_building_3d_subfolders": { "type": "boolean" }
+          }
+        },
+        "RootStructureRule": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "expected_children": {
+              "type": "array",
+              "items": { "type": "string" },
+              "minItems": 1
+            }
+          }
+        },
+        "dataTypeValidationRule": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "synonyms": {
+              "type": "object",
+              "additionalProperties": { "type": "string" }
+            },
+            "rules": {
+              "type": "object",
+              "additionalProperties": {
+                "oneOf": [
+                  { "type": "string" },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "type": { "type": "string" },
+                      "allowEmpty": { "type": "boolean" },
+                      "enum": {
+                        "type": "array",
+                        "items": { "type": "string" }
+                      },
+                      "pattern": { "type": "string" }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "LinksTableRule": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "check_private": { "type": "boolean" },
+            "check_tollway": { "type": "boolean" },
+            "check_public_access": { "type": "boolean" },
+            "#notes": { "type": "string" },
+            "boolean_tokens": {
+              "type": "array",
+              "items": { "type": "string" },
+              "minItems": 1
+            },
+            "expectedHeaders": {
+              "type": "array",
+              "items": { "type": "string" },
+              "minItems": 1
+            }
+          }
+        }
+      }
+    }
+  }
+}
