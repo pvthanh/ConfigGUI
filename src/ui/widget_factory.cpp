@@ -2,6 +2,10 @@
 // WidgetFactory - Implementation
 
 #include "widget_factory.h"
+#include "array_widget.h"
+#include "range_widget.h"
+#include "dictionary_widget.h"
+#include "object_array_widget.h"
 #include <QLineEdit>
 #include <QSpinBox>
 #include <QDoubleSpinBox>
@@ -14,16 +18,53 @@ namespace ui {
 
 QWidget* WidgetFactory::createWidget(const json& schema, QWidget* parent)
 {
+    // Check if it's an enum FIRST - enums can be attached to strings, integers, etc.
+    if (schema.contains("enum") && schema["enum"].is_array() && schema["enum"].size() > 0)
+    {
+        return createEnumWidget(schema, parent);
+    }
+
+    // Check if it's an object with additionalProperties (key-value map / dictionary)
+    if (schema.contains("type") && schema["type"].get<std::string>() == "object")
+    {
+        if (schema.contains("additionalProperties"))
+        {
+            return new DictionaryWidget(schema, parent);
+        }
+    }
+
+    // Check if it's an array
+    if (schema.contains("type") && schema["type"].get<std::string>() == "array")
+    {
+        // Check if it's an array of objects (complex objects)
+        if (schema.contains("items") && schema["items"].contains("properties"))
+        {
+            // Array of objects with properties - use ObjectArrayWidget
+            return new ObjectArrayWidget(schema, parent);
+        }
+
+        // Check if it's a fixed-size array (minItems === maxItems)
+        if (schema.contains("minItems") && schema.contains("maxItems"))
+        {
+            int min_items = schema["minItems"].get<int>();
+            int max_items = schema["maxItems"].get<int>();
+            
+            // If minItems equals maxItems, it's a fixed-size array (like a range)
+            if (min_items == max_items && min_items > 0)
+            {
+                return new RangeWidget(schema, parent);
+            }
+        }
+
+        // Variable-size array of simple types (strings, enums, etc.)
+        return new ArrayWidget(schema, parent);
+    }
+
     const FieldType field_type = getFieldType(schema);
 
     switch (field_type)
     {
         case FieldType::String:
-            // Check if it's an enum string
-            if (schema.contains("enum"))
-            {
-                return createEnumWidget(schema, parent);
-            }
             return createStringWidget(schema, parent);
         case FieldType::Integer:
             return createIntegerWidget(schema, parent);
@@ -32,51 +73,8 @@ QWidget* WidgetFactory::createWidget(const json& schema, QWidget* parent)
         case FieldType::Boolean:
             return createBooleanWidget(schema, parent);
         case FieldType::Array:
-            // Array could be an enum (strings in array) or actual array of items
-            if (schema.contains("enum"))
-            {
-                return createEnumWidget(schema, parent);
-            }
-            // For non-enum arrays, check if it's an array of simple types
-            if (schema.contains("items"))
-            {
-                const auto& items = schema["items"];
-                if (items.contains("enum"))
-                {
-                    // Array of enums - create text edit showing comma-separated enum values
-                    auto* widget = new QLineEdit(parent);
-                    widget->setPlaceholderText("Enter comma-separated values");
-                    widget->setToolTip("Array of enumerated values. Separate multiple values with commas.");
-                    return widget;
-                }
-                if (items.is_object() && items.contains("type"))
-                {
-                    const auto item_type = items["type"].get<std::string>();
-                    if (item_type == "string")
-                    {
-                        // Array of strings - treat as multi-line text
-                        auto* widget = new QLineEdit(parent);
-                        widget->setPlaceholderText("Comma-separated values");
-                        widget->setToolTip("Array of strings. Separate multiple values with commas.");
-                        return widget;
-                    }
-                    else if (item_type == "integer" || item_type == "number")
-                    {
-                        // Array of numbers
-                        auto* widget = new QLineEdit(parent);
-                        widget->setPlaceholderText("Comma-separated numbers");
-                        widget->setToolTip("Array of numbers. Separate multiple values with commas.");
-                        return widget;
-                    }
-                }
-            }
-            // For other arrays, treat as text input with placeholder
-            {
-                auto* widget = new QLineEdit(parent);
-                widget->setPlaceholderText("Array input");
-                widget->setToolTip("Array. Separate multiple values with commas.");
-                return widget;
-            }
+            // Use ArrayWidget for all variable-size arrays - it handles add/remove with proper UI
+            return new ArrayWidget(schema, parent);
         default:
             // For Object and Unknown types, return nullptr to skip
             return nullptr;
@@ -85,11 +83,8 @@ QWidget* WidgetFactory::createWidget(const json& schema, QWidget* parent)
 
 FieldType WidgetFactory::getFieldType(const json& schema) const
 {
-    // First check if it has enum - enums should use ComboBox regardless of type
-    if (schema.contains("enum") && schema["enum"].is_array() && schema["enum"].size() > 0)
-    {
-        return FieldType::Array; // Array type indicates enum/combo box
-    }
+    // Note: Enum handling is done in createWidget() before calling getFieldType()
+    // This allows enums to be treated as ComboBox regardless of their base type
 
     // If no type field, try to infer or return Unknown
     if (!schema.contains("type"))
@@ -140,15 +135,45 @@ FieldType WidgetFactory::getFieldType(const json& schema) const
 QWidget* WidgetFactory::createStringWidget(const json& schema, QWidget* parent)
 {
     auto* widget = new QLineEdit(parent);
-    widget->setPlaceholderText("Enter text...");
+    
+    // Use x-hint as placeholder if available, otherwise use examples or default placeholder
+    if (schema.contains("x-hint"))
+    {
+        widget->setPlaceholderText(QString::fromStdString(schema["x-hint"].get<std::string>()));
+    }
+    else if (schema.contains("examples") && schema["examples"].is_array() && schema["examples"].size() > 0)
+    {
+        widget->setPlaceholderText(QString::fromStdString(schema["examples"][0].get<std::string>()));
+    }
+    else
+    {
+        widget->setPlaceholderText("Enter text...");
+    }
+    
+    // Set default value if available
+    if (schema.contains("default"))
+    {
+        widget->setText(QString::fromStdString(schema["default"].get<std::string>()));
+    }
 
+    // Apply constraints
     if (schema.contains("minLength"))
     {
-        // Could set validator
+        // Could set validator for min length
     }
     if (schema.contains("maxLength"))
     {
         widget->setMaxLength(schema["maxLength"].get<int>());
+    }
+    
+    // Add tooltip with description or pattern
+    if (schema.contains("description"))
+    {
+        widget->setToolTip(QString::fromStdString(schema["description"].get<std::string>()));
+    }
+    else if (schema.contains("pattern"))
+    {
+        widget->setToolTip("Pattern: " + QString::fromStdString(schema["pattern"].get<std::string>()));
     }
 
     return widget;
@@ -157,14 +182,49 @@ QWidget* WidgetFactory::createStringWidget(const json& schema, QWidget* parent)
 QWidget* WidgetFactory::createIntegerWidget(const json& schema, QWidget* parent)
 {
     auto* widget = new QSpinBox(parent);
+    
+    // Set default value if available
+    if (schema.contains("default"))
+    {
+        widget->setValue(schema["default"].get<int>());
+    }
+    else
+    {
+        widget->setValue(0);
+    }
 
-    if (schema.contains("minimum"))
+    // Apply minimum constraint (with exclusiveMinimum handling)
+    if (schema.contains("exclusiveMinimum"))
+    {
+        widget->setMinimum(schema["exclusiveMinimum"].get<int>() + 1);
+    }
+    else if (schema.contains("minimum"))
     {
         widget->setMinimum(schema["minimum"].get<int>());
     }
+    else
+    {
+        widget->setMinimum(INT_MIN);
+    }
+    
+    // Apply maximum constraint
     if (schema.contains("maximum"))
     {
         widget->setMaximum(schema["maximum"].get<int>());
+    }
+    else
+    {
+        widget->setMaximum(INT_MAX);
+    }
+    
+    // Add tooltip with description
+    if (schema.contains("description"))
+    {
+        widget->setToolTip(QString::fromStdString(schema["description"].get<std::string>()));
+    }
+    else if (schema.contains("x-hint"))
+    {
+        widget->setToolTip(QString::fromStdString(schema["x-hint"].get<std::string>()));
     }
 
     return widget;
@@ -173,41 +233,127 @@ QWidget* WidgetFactory::createIntegerWidget(const json& schema, QWidget* parent)
 QWidget* WidgetFactory::createNumberWidget(const json& schema, QWidget* parent)
 {
     auto* widget = new QDoubleSpinBox(parent);
+    
+    // Set decimal places for better precision
+    widget->setDecimals(6);
+    
+    // Set default value if available
+    if (schema.contains("default"))
+    {
+        widget->setValue(schema["default"].get<double>());
+    }
+    else
+    {
+        widget->setValue(0.0);
+    }
 
-    if (schema.contains("minimum"))
+    // Apply minimum constraint (with exclusiveMinimum handling)
+    if (schema.contains("exclusiveMinimum"))
+    {
+        // For exclusive minimum, set to just above the value
+        double min_val = schema["exclusiveMinimum"].get<double>();
+        widget->setMinimum(min_val + 0.000001);
+    }
+    else if (schema.contains("minimum"))
     {
         widget->setMinimum(schema["minimum"].get<double>());
     }
+    else
+    {
+        widget->setMinimum(-999999999.0);
+    }
+    
+    // Apply maximum constraint
     if (schema.contains("maximum"))
     {
         widget->setMaximum(schema["maximum"].get<double>());
+    }
+    else
+    {
+        widget->setMaximum(999999999.0);
+    }
+    
+    // Add tooltip with description
+    if (schema.contains("description"))
+    {
+        widget->setToolTip(QString::fromStdString(schema["description"].get<std::string>()));
+    }
+    else if (schema.contains("x-hint"))
+    {
+        widget->setToolTip(QString::fromStdString(schema["x-hint"].get<std::string>()));
     }
 
     return widget;
 }
 
-QWidget* WidgetFactory::createBooleanWidget(const json& /*schema*/, QWidget* parent)
+QWidget* WidgetFactory::createBooleanWidget(const json& schema, QWidget* parent)
 {
-    return new QCheckBox(parent);
+    auto* widget = new QCheckBox(parent);
+    
+    // Set default value if available
+    if (schema.contains("default"))
+    {
+        widget->setChecked(schema["default"].get<bool>());
+    }
+    
+    // Add tooltip
+    if (schema.contains("description"))
+    {
+        widget->setToolTip(QString::fromStdString(schema["description"].get<std::string>()));
+    }
+    else if (schema.contains("x-hint"))
+    {
+        widget->setToolTip(QString::fromStdString(schema["x-hint"].get<std::string>()));
+    }
+    
+    return widget;
 }
 
 QWidget* WidgetFactory::createEnumWidget(const json& schema, QWidget* parent)
 {
     auto* widget = new QComboBox(parent);
 
+    // Add empty option first
+    widget->addItem("");
+    
     if (schema.contains("enum"))
     {
         const auto& enums = schema["enum"];
         if (enums.is_array())
         {
-            for (const auto& item : enums)
+            int default_index = 0;
+            for (size_t i = 0; i < enums.size(); ++i)
             {
+                const auto& item = enums.at(i);
                 if (item.is_string())
                 {
-                    widget->addItem(QString::fromStdString(item.get<std::string>()));
+                    QString enum_text = QString::fromStdString(item.get<std::string>());
+                    widget->addItem(enum_text);
+                    
+                    // Check if this is the default value
+                    if (schema.contains("default") && schema["default"].get<std::string>() == item.get<std::string>())
+                    {
+                        default_index = static_cast<int>(i) + 1;  // +1 because we added empty option first
+                    }
                 }
             }
+            
+            // Set default selection
+            if (default_index > 0)
+            {
+                widget->setCurrentIndex(default_index);
+            }
         }
+    }
+    
+    // Add tooltip
+    if (schema.contains("description"))
+    {
+        widget->setToolTip(QString::fromStdString(schema["description"].get<std::string>()));
+    }
+    else if (schema.contains("x-hint"))
+    {
+        widget->setToolTip(QString::fromStdString(schema["x-hint"].get<std::string>()));
     }
 
     return widget;

@@ -37,21 +37,22 @@
             "output/navteq-validator.log"
           ],
           "x-hint": "Path to log file. Example: output/navteq-validator.log"
+        },
+        "configPath": {
+          "type": "string",
+          "description": "type is string - Path to the base configuration json",
+          "default": "/tmp/pxpoint-configs/log-services/cpp/logging-development.json",
+          "examples": [
+            "/tmp/pxpoint-configs/log-services/cpp/logging-development.json"
+          ],
+          "x-hint": "Path to the base configuration json"
         }
       },
       "required": [
         "level",
-        "file"
+        "file",
+        "configPath"
       ]
-    },
-    "configPath": {
-      "type": "string",
-      "description": "type is string",
-      "default": "/tmp/pxpoint-configs/log-services/cpp/logging-development.json",
-      "examples": [
-        "/tmp/pxpoint-configs/log-services/cpp/logging-development.json"
-      ],
-      "x-hint": "Path to the base configuration json"
     },
     "autoRules": {
       "type": "object",
@@ -1051,7 +1052,6 @@
   },
   "required": [
     "log",
-    "configPath",
     "autoRules",
     "parallelism",
     "parallelismByMode",

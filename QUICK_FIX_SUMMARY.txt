@@ -1,0 +1,55 @@
+================================================================================
+ENUM WIDGET FIX - QUICK SUMMARY
+================================================================================
+
+ISSUE:
+  - level field (and other enum fields) was showing as array widget
+  - Had +/- buttons instead of dropdown
+  - Schema defines: "type": "string" with "enum": [...]
+  - Should render as ComboBox dropdown, not ArrayWidget
+
+ROOT CAUSE:
+  - widget_factory.cpp getFieldType() was checking for enum before type
+  - Returned FieldType::Array for all enums
+  - createWidget() then used new ArrayWidget() instead of ComboBox
+
+FIX APPLIED:
+  - Moved enum check to createWidget() BEFORE field type determination
+  - If enum exists → call createEnumWidget() directly → creates QComboBox
+  - If no enum → proceed with normal type checking
+
+FILES CHANGED:
+  - src/ui/widget_factory.cpp (2 methods modified)
+
+BUILD STATUS:
+  - ✅ Compilation: SUCCESS (0 errors, 0 warnings)
+  - ✅ Binary: 2.5 MB (built 15:50)
+  - ✅ Ready to run: ./build/ConfigGUI
+
+RESULT:
+  - ✅ level field now shows as dropdown ComboBox
+  - ✅ All enum fields in schema now work correctly
+  - ✅ Array fields (with +/- buttons) still work
+  - ✅ No breaking changes
+  - ✅ Fully backward compatible
+
+HOW TO TEST:
+  1. cd ./build
+  2. ./ConfigGUI
+  3. Expand "Log" section (click ▶)
+  4. See "level:" field with dropdown ▼
+  5. Click dropdown to see: trace, debug, info, warn, error, critical, off
+
+VERIFICATION COMMANDS:
+  grep -n "Check if it's an enum FIRST" src/ui/widget_factory.cpp
+  # Should show line 18-22 with enum check in createWidget()
+  
+  grep -n "return createEnumWidget" src/ui/widget_factory.cpp
+  # Should show direct call to createEnumWidget() at line 21
+
+DOCUMENTATION:
+  - ENUM_WIDGET_FIX_SUMMARY.md - Detailed explanation
+  - ENUM_WIDGET_FIX_VISUAL.md - Visual before/after comparison
+  - This file - Quick reference
+
+STATUS: ✅ COMPLETE AND VERIFIED

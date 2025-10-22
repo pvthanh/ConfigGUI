@@ -14,6 +14,29 @@ int main(int argc, char* argv[])
     QApplication::setApplicationVersion("1.0.0");
     QApplication::setApplicationDisplayName("Schema-Driven Configuration GUI");
 
+    // Global UI stylesheet: improve dropdown (QComboBox) item hover/selection visibility
+    // Applies to ALL combo boxes across the application.
+    // - Hover: light blue background, black text
+    // - Selected: slightly darker blue, black text
+    // This avoids cases where the hover state appears white and reduces readability.
+    const QString kGlobalStyle = QString(
+        "QComboBox QAbstractItemView {"
+        "  background: #ffffff;"
+        "  color: #000000;"
+        "  selection-background-color: #cce4ff;"
+        "  selection-color: #000000;"
+        "}"
+        "QComboBox QAbstractItemView::item:hover {"
+        "  background: #e6f2ff;"
+        "  color: #000000;"
+        "}"
+        "QComboBox QAbstractItemView::item:selected {"
+        "  background: #cce4ff;"
+        "  color: #000000;"
+        "}"
+    );
+    app.setStyleSheet(kGlobalStyle);
+
     // Create and show main window
     configgui::ui::MainWindow window;
     window.show();

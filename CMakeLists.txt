@@ -62,6 +62,20 @@ set(UI_SOURCES
     src/ui/widget_factory.cpp
     src/ui/form_generator.h
     src/ui/form_generator.cpp
+    src/ui/array_widget.h
+    src/ui/array_widget.cpp
+    src/ui/range_widget.h
+    src/ui/range_widget.cpp
+    src/ui/dictionary_widget.h
+    src/ui/dictionary_widget.cpp
+    src/ui/object_array_widget.h
+    src/ui/object_array_widget.cpp
+    src/ui/path_selector_widget.h
+    src/ui/path_selector_widget.cpp
+    src/ui/rule_parser.h
+    src/ui/rule_parser.cpp
+    src/ui/rule_editor_widget.h
+    src/ui/rule_editor_widget.cpp
     src/ui/validation_feedback_widget.h
     src/ui/validation_feedback_widget.cpp
 )
