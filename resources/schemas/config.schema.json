@@ -1,245 +1,1063 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://pvthanh.github.io/navteq-validator/config.schema.json",
-  "title": "navteq-validator configuration",
+  "$id": "./config.schema.json",
+  "title": "Validator Configuration",
+  "description": "JSON Schema for the validator configuration, generated from the provided config with field-level descriptions and hints.",
   "type": "object",
   "additionalProperties": false,
   "properties": {
-    "$schema": { "type": "string" },
-    "$id": { "type": "string" },
-    "mode": {
-      "description": "Validation mode when running with --config",
-      "type": "string",
-      "enum": ["auto", "rdf", "shapefiles", "3d-landmarks"]
-    },
-    "dataPath": {
-      "description": "Root path to the dataset to validate (when using --config)",
-      "type": "string"
-    },
-    "rules": {
-      "description": "Explicit list of rules to run (overrides auto rules for the chosen mode)",
-      "type": "array",
-      "items": { "type": "string" }
-    },
     "log": {
       "type": "object",
       "additionalProperties": false,
+      "description": "Logging settings",
       "properties": {
         "level": {
           "type": "string",
-          "enum": ["trace", "debug", "info", "warn", "error", "critical", "off"]
+          "description": "type is string and can receive value: 'trace', 'debug', 'info', 'warn', 'error', 'critical' or 'off'",
+          "enum": [
+            "trace",
+            "debug",
+            "info",
+            "warn",
+            "error",
+            "critical",
+            "off"
+          ],
+          "default": "info",
+          "examples": [
+            "info"
+          ],
+          "x-hint": "Choose the log level. Current value: info"
         },
-        "file": { "type": "string" },
-        "configPath": { "type": "string" }
-      }
+        "file": {
+          "type": "string",
+          "description": "type is string file",
+          "default": "output/navteq-validator.log",
+          "examples": [
+            "output/navteq-validator.log"
+          ],
+          "x-hint": "Path to log file. Example: output/navteq-validator.log"
+        }
+      },
+      "required": [
+        "level",
+        "file"
+      ]
+    },
+    "configPath": {
+      "type": "string",
+      "description": "type is string",
+      "default": "/tmp/pxpoint-configs/log-services/cpp/logging-development.json",
+      "examples": [
+        "/tmp/pxpoint-configs/log-services/cpp/logging-development.json"
+      ],
+      "x-hint": "Path to the base configuration json"
     },
     "autoRules": {
-      "description": "Mapping from folder-name patterns to rule lists; 'default' applies when no pattern matches.",
       "type": "object",
-      "additionalProperties": {
-        "type": "array",
-        "items": { "type": "string" }
-      }
-    },
-    "rootRules": {
-      "type": "array",
-      "items": { "type": "string" }
-    },
-    "parallelism": { "type": "integer", "minimum": 1 },
-    "parallelismByMode": {
-      "type": "object",
-      "additionalProperties": { "type": "integer", "minimum": 1 }
-    },
-    "maxTasksInFlight": { "type": "integer", "minimum": 1 },
-    "report": {
-      "type": "object",
+      "description": "nest object contain at least 3 items: 'rdf', 'shapefiles', '3d-landmarks'",
       "additionalProperties": false,
       "properties": {
-        "json": { "type": "string" },
-        "csv": { "type": "string" }
-      }
+        "rdf": {
+          "type": "array",
+          "description": "a vector of rule with rule can be: RdfIntegrityRule, DataTypeValidationRule, LinksTableRule, LinksGeometryRule, PoiTableRule, BuildingTableRule, GeometryEquivalenceRule, ShapefileCompletenessRule, ShapefilePrjRule, 3DFileCompletenessRule, ObjMtlReferenceRule",
+          "items": {
+            "type": "string",
+            "enum": [
+              "RdfIntegrityRule",
+              "DataTypeValidationRule",
+              "LinksTableRule",
+              "LinksGeometryRule",
+              "PoiTableRule",
+              "BuildingTableRule",
+              "GeometryEquivalenceRule",
+              "ShapefileCompletenessRule",
+              "ShapefilePrjRule",
+              "3DFileCompletenessRule",
+              "ObjMtlReferenceRule",
+              "RootStructureRule"
+            ]
+          },
+          "default": [
+            "RdfIntegrityRule",
+            "DataTypeValidationRule",
+            "LinksTableRule",
+            "LinksGeometryRule",
+            "PoiTableRule",
+            "BuildingTableRule",
+            "GeometryEquivalenceRule"
+          ],
+          "examples": [
+            [
+              "RdfIntegrityRule",
+              "DataTypeValidationRule",
+              "LinksTableRule",
+              "LinksGeometryRule",
+              "PoiTableRule",
+              "BuildingTableRule",
+              "GeometryEquivalenceRule"
+            ]
+          ],
+          "x-hint": "Select rules to apply for RDF inputs"
+        },
+        "shapefiles": {
+          "type": "array",
+          "description": "a vector of rule ... includes ShapefileCompletenessRule, ShapefilePrjRule, GeometryEquivalenceRule, etc.",
+          "items": {
+            "type": "string",
+            "enum": [
+              "RdfIntegrityRule",
+              "DataTypeValidationRule",
+              "LinksTableRule",
+              "LinksGeometryRule",
+              "PoiTableRule",
+              "BuildingTableRule",
+              "GeometryEquivalenceRule",
+              "ShapefileCompletenessRule",
+              "ShapefilePrjRule",
+              "3DFileCompletenessRule",
+              "ObjMtlReferenceRule",
+              "RootStructureRule"
+            ]
+          },
+          "default": [
+            "ShapefileCompletenessRule",
+            "ShapefilePrjRule",
+            "GeometryEquivalenceRule"
+          ],
+          "examples": [
+            [
+              "ShapefileCompletenessRule",
+              "ShapefilePrjRule",
+              "GeometryEquivalenceRule"
+            ]
+          ],
+          "x-hint": "Select rules to apply for Shapefile inputs"
+        },
+        "3d-landmarks": {
+          "type": "array",
+          "description": "a vector of rule ... includes 3DFileCompletenessRule, ObjMtlReferenceRule, etc.",
+          "items": {
+            "type": "string",
+            "enum": [
+              "RdfIntegrityRule",
+              "DataTypeValidationRule",
+              "LinksTableRule",
+              "LinksGeometryRule",
+              "PoiTableRule",
+              "BuildingTableRule",
+              "GeometryEquivalenceRule",
+              "ShapefileCompletenessRule",
+              "ShapefilePrjRule",
+              "3DFileCompletenessRule",
+              "ObjMtlReferenceRule",
+              "RootStructureRule"
+            ]
+          },
+          "default": [
+            "3DFileCompletenessRule",
+            "ObjMtlReferenceRule"
+          ],
+          "examples": [
+            [
+              "3DFileCompletenessRule",
+              "ObjMtlReferenceRule"
+            ]
+          ],
+          "x-hint": "Select rules to apply for 3D landmarks"
+        },
+        "default": {
+          "type": "array",
+          "description": "a vector of rule ...",
+          "items": {
+            "type": "string",
+            "enum": [
+              "RdfIntegrityRule",
+              "DataTypeValidationRule",
+              "LinksTableRule",
+              "LinksGeometryRule",
+              "PoiTableRule",
+              "BuildingTableRule",
+              "GeometryEquivalenceRule",
+              "ShapefileCompletenessRule",
+              "ShapefilePrjRule",
+              "3DFileCompletenessRule",
+              "ObjMtlReferenceRule",
+              "RootStructureRule"
+            ]
+          },
+          "default": [
+            "3DFileCompletenessRule"
+          ],
+          "examples": [
+            [
+              "3DFileCompletenessRule"
+            ]
+          ],
+          "x-hint": "Default rules applied when mode is not specified"
+        },
+        "rootRules": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "RootStructureRule"
+            ]
+          },
+          "default": [
+            "RootStructureRule"
+          ],
+          "examples": [
+            [
+              "RootStructureRule"
+            ]
+          ],
+          "x-hint": "Rules applied at root level"
+        }
+      },
+      "required": [
+        "rdf",
+        "shapefiles",
+        "3d-landmarks",
+        "default",
+        "rootRules"
+      ]
+    },
+    "parallelism": {
+      "type": "integer",
+      "description": "type is integer with value > 0",
+      "minimum": 1,
+      "default": 4,
+      "examples": [
+        4
+      ],
+      "x-hint": "Number of worker threads"
+    },
+    "parallelismByMode": {
+      "type": "object",
+      "description": "type nest object that contain auto, rdf, 3d-landmarks, shapefiles",
+      "additionalProperties": false,
+      "properties": {
+        "auto": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 4,
+          "examples": [
+            4
+          ],
+          "x-hint": "Parallelism for auto mode"
+        },
+        "rdf": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 3,
+          "examples": [
+            3
+          ],
+          "x-hint": "Parallelism for rdf mode"
+        },
+        "3d-landmarks": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 2,
+          "examples": [
+            2
+          ],
+          "x-hint": "Parallelism for 3d-landmarks mode"
+        },
+        "shapefiles": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 2,
+          "examples": [
+            2
+          ],
+          "x-hint": "Parallelism for shapefiles mode"
+        }
+      },
+      "required": [
+        "auto",
+        "rdf",
+        "3d-landmarks",
+        "shapefiles"
+      ]
+    },
+    "maxTasksInFlight": {
+      "type": "integer",
+      "description": "type is integer with value > 0",
+      "minimum": 1,
+      "default": 8,
+      "examples": [
+        8
+      ],
+      "x-hint": "Global limit of concurrent tasks"
+    },
+    "report": {
+      "type": "object",
+      "description": "type nest object that contain json, csv",
+      "additionalProperties": false,
+      "properties": {
+        "json": {
+          "type": "string",
+          "description": "string following path file format json",
+          "pattern": ".*\\.json$",
+          "default": "output/report.json",
+          "examples": [
+            "output/report.json"
+          ],
+          "x-hint": "Output path for JSON report (*.json)"
+        },
+        "csv": {
+          "type": "string",
+          "description": "string following path file format csv",
+          "pattern": ".*\\.csv$",
+          "default": "output/report.csv",
+          "examples": [
+            "output/report.csv"
+          ],
+          "x-hint": "Output path for CSV report (*.csv)"
+        }
+      },
+      "required": [
+        "json",
+        "csv"
+      ]
     },
     "alerts": {
       "type": "object",
+      "description": "type nest object that contain enable, configPath",
       "additionalProperties": false,
       "properties": {
-        "enabled": { "type": "boolean" },
-        "configPath": { "type": "string" }
-      }
+        "enabled": {
+          "type": "boolean",
+          "description": "boolean value true or false",
+          "default": true,
+          "examples": [
+            true
+          ],
+          "x-hint": "Turn alerts on/off"
+        },
+        "configPath": {
+          "type": "string",
+          "description": "string following path file format",
+          "default": "config/alerts.local.json",
+          "examples": [
+            "config/alerts.local.json"
+          ],
+          "x-hint": "Path to alerts config"
+        }
+      },
+      "required": [
+        "enabled",
+        "configPath"
+      ]
     },
     "configureRules": {
       "type": "object",
-      "description": "Per-rule configuration. Unknown rule names are allowed.",
-      "additionalProperties": { "type": "object" },
+      "description": "type nest object that contain individual rule configurations",
+      "additionalProperties": false,
       "properties": {
         "GeometryEquivalenceRule": {
           "type": "object",
+          "description": "type nest object that contain fieldName, tolerance",
           "additionalProperties": false,
           "properties": {
-            "fieldName": { "type": "string" },
-            "tolerance": { "type": "number", "minimum": 0 }
-          }
+            "fieldName": {
+              "type": "string",
+              "default": "LINK_ID",
+              "examples": [
+                "LINK_ID"
+              ],
+              "x-hint": "Field used to compare geometry equivalence"
+            },
+            "tolerance": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "default": 1e-06,
+              "examples": [
+                1e-06
+              ],
+              "x-hint": "Tolerance (must be > 0). Example: 1e-6"
+            }
+          },
+          "required": [
+            "fieldName",
+            "tolerance"
+          ]
         },
         "ShapefilePrjRule": {
           "type": "object",
+          "description": "type nest object that contain acceptedTokens",
           "additionalProperties": false,
           "properties": {
             "acceptedTokens": {
               "type": "array",
-              "items": { "type": "string" }
+              "items": {
+                "type": "string"
+              },
+              "default": [
+                "WGS 84",
+                "WGS84",
+                "WGS_1984",
+                "WGS-84",
+                "EPSG:4326",
+                "4326"
+              ],
+              "examples": [
+                [
+                  "WGS 84",
+                  "WGS84",
+                  "WGS_1984",
+                  "WGS-84",
+                  "EPSG:4326",
+                  "4326"
+                ]
+              ],
+              "x-hint": "List of accepted PRJ tokens"
             }
-          }
+          },
+          "required": [
+            "acceptedTokens"
+          ]
         },
         "3DFileCompletenessRule": {
           "type": "object",
+          "description": "type nest object that contain requiredSuffixes, searchRecursively",
           "additionalProperties": false,
           "properties": {
             "requiredSuffixes": {
               "type": "array",
-              "items": { "type": "string" },
-              "minItems": 1
+              "items": {
+                "type": "string"
+              },
+              "default": [
+                "_L.OBJ",
+                "_L.MTL",
+                "_S.OBJ",
+                "_S.MTL",
+                "_ICON.TGA"
+              ],
+              "examples": [
+                [
+                  "_L.OBJ",
+                  "_L.MTL",
+                  "_S.OBJ",
+                  "_S.MTL",
+                  "_ICON.TGA"
+                ]
+              ],
+              "x-hint": "Required file suffixes"
             },
-            "searchRecursively": { "type": "boolean" }
-          }
+            "searchRecursively": {
+              "type": "boolean",
+              "default": true,
+              "examples": [
+                true
+              ],
+              "x-hint": "Search subfolders recursively"
+            }
+          },
+          "required": [
+            "requiredSuffixes",
+            "searchRecursively"
+          ]
         },
         "ShapefileCompletenessRule": {
           "type": "object",
+          "description": "type nest object that contain requiredComponents, caseSensitive",
           "additionalProperties": false,
           "properties": {
             "requiredComponents": {
               "type": "array",
-              "items": { "type": "string" },
-              "minItems": 1
+              "items": {
+                "type": "string"
+              },
+              "default": [
+                ".shx",
+                ".dbf"
+              ],
+              "examples": [
+                [
+                  ".shx",
+                  ".dbf"
+                ]
+              ],
+              "x-hint": "Required component extensions"
             },
-            "caseSensitive": { "type": "boolean" }
-          }
+            "caseSensitive": {
+              "type": "boolean",
+              "default": false,
+              "examples": [
+                false
+              ],
+              "x-hint": "Whether component names are case-sensitive"
+            }
+          },
+          "required": [
+            "requiredComponents",
+            "caseSensitive"
+          ]
         },
         "ObjMtlReferenceRule": {
           "type": "object",
+          "description": "type nest object that contain expectedMtlExtension, caseSensitive, allowMissingMtllib",
           "additionalProperties": false,
           "properties": {
-            "expectedMtlExtension": { "type": "string" },
-            "caseSensitive": { "type": "boolean" },
-            "allowMissingMtllib": { "type": "boolean" }
-          }
+            "expectedMtlExtension": {
+              "type": "string",
+              "default": ".MTL",
+              "examples": [
+                ".MTL"
+              ],
+              "x-hint": "Expected MTL file extension"
+            },
+            "caseSensitive": {
+              "type": "boolean",
+              "default": false,
+              "examples": [
+                false
+              ],
+              "x-hint": "Case-sensitive extension matching"
+            },
+            "allowMissingMtllib": {
+              "type": "boolean",
+              "default": false,
+              "examples": [
+                false
+              ],
+              "x-hint": "Allow OBJ without mtllib reference"
+            }
+          },
+          "required": [
+            "expectedMtlExtension",
+            "caseSensitive",
+            "allowMissingMtllib"
+          ]
         },
         "BuildingTableRule": {
           "type": "object",
+          "description": "type nest object that contain require_sdo_or_wkt, expectedHeaders",
           "additionalProperties": false,
           "properties": {
-            "require_sdo_or_wkt": { "type": "boolean" },
+            "require_sdo_or_wkt": {
+              "type": "boolean",
+              "default": true,
+              "examples": [
+                true
+              ],
+              "x-hint": "Require geometry column (SDO/WKT)"
+            },
             "expectedHeaders": {
               "type": "array",
-              "items": { "type": "string" },
-              "minItems": 1
+              "items": {
+                "type": "string"
+              },
+              "default": [
+                "BUILDING_ID",
+                "BUILDING_TYPE",
+                "HEIGHT",
+                "SDO",
+                "WKT",
+                "LAT",
+                "LON"
+              ],
+              "examples": [
+                [
+                  "BUILDING_ID",
+                  "BUILDING_TYPE",
+                  "HEIGHT",
+                  "SDO",
+                  "WKT",
+                  "LAT",
+                  "LON"
+                ]
+              ],
+              "x-hint": "Expected CSV header names"
             }
-          }
+          },
+          "required": [
+            "require_sdo_or_wkt",
+            "expectedHeaders"
+          ]
         },
         "LinksGeometryRule": {
           "type": "object",
+          "description": "type nest object that contain require_sdo_or_wkt, expectedHeaders",
           "additionalProperties": false,
           "properties": {
-            "require_sdo_or_wkt": { "type": "boolean" },
+            "require_sdo_or_wkt": {
+              "type": "boolean",
+              "default": true,
+              "examples": [
+                true
+              ],
+              "x-hint": "Require geometry column (SDO/WKT)"
+            },
             "expectedHeaders": {
               "type": "array",
-              "items": { "type": "string" },
-              "minItems": 1
+              "items": {
+                "type": "string"
+              },
+              "default": [
+                "LINK_ID",
+                "SDO",
+                "WKT"
+              ],
+              "examples": [
+                [
+                  "LINK_ID",
+                  "SDO",
+                  "WKT"
+                ]
+              ],
+              "x-hint": "Expected CSV header names"
             }
-          }
+          },
+          "required": [
+            "require_sdo_or_wkt",
+            "expectedHeaders"
+          ]
         },
         "PoiTableRule": {
           "type": "object",
+          "description": "type nest object that contain latitude_range, longitude_range, expectedHeaders",
           "additionalProperties": false,
           "properties": {
             "latitude_range": {
               "type": "array",
-              "items": { "type": "number" },
               "minItems": 2,
-              "maxItems": 2
+              "maxItems": 2,
+              "items": {
+                "type": "number",
+                "minimum": -90,
+                "maximum": 90
+              },
+              "default": [
+                -90,
+                90
+              ],
+              "examples": [
+                [
+                  -90,
+                  90
+                ]
+              ],
+              "x-hint": "Latitude range [min,max]"
             },
             "longitude_range": {
               "type": "array",
-              "items": { "type": "number" },
               "minItems": 2,
-              "maxItems": 2
+              "maxItems": 2,
+              "items": {
+                "type": "number",
+                "minimum": -180,
+                "maximum": 180
+              },
+              "default": [
+                -180,
+                180
+              ],
+              "examples": [
+                [
+                  -180,
+                  180
+                ]
+              ],
+              "x-hint": "Longitude range [min,max]"
             },
             "expectedHeaders": {
               "type": "array",
-              "items": { "type": "string" },
-              "minItems": 1
+              "items": {
+                "type": "string"
+              },
+              "default": [
+                "POI_ID",
+                "POI_TYPE",
+                "LAT",
+                "LON"
+              ],
+              "examples": [
+                [
+                  "POI_ID",
+                  "POI_TYPE",
+                  "LAT",
+                  "LON"
+                ]
+              ],
+              "x-hint": "Expected CSV header names"
             }
-          }
+          },
+          "required": [
+            "latitude_range",
+            "longitude_range",
+            "expectedHeaders"
+          ]
         },
         "RdfIntegrityRule": {
           "type": "object",
+          "description": "type nest object that contain check_building_3d_subfolders",
           "additionalProperties": false,
           "properties": {
-            "check_building_3d_subfolders": { "type": "boolean" }
-          }
+            "check_building_3d_subfolders": {
+              "type": "boolean",
+              "default": true,
+              "examples": [
+                true
+              ],
+              "x-hint": "Check existence of building 3D subfolders"
+            }
+          },
+          "required": [
+            "check_building_3d_subfolders"
+          ]
         },
         "RootStructureRule": {
           "type": "object",
+          "description": "type nest object that contain expected_children",
           "additionalProperties": false,
           "properties": {
             "expected_children": {
               "type": "array",
-              "items": { "type": "string" },
-              "minItems": 1
+              "items": {
+                "type": "string"
+              },
+              "default": [
+                "*_3DLandmarks",
+                "*_RDF",
+                "*_Shapefiles"
+              ],
+              "examples": [
+                [
+                  "*_3DLandmarks",
+                  "*_RDF",
+                  "*_Shapefiles"
+                ]
+              ],
+              "x-hint": "Child folder names expected at root"
             }
-          }
+          },
+          "required": [
+            "expected_children"
+          ]
         },
         "dataTypeValidationRule": {
           "type": "object",
+          "description": "type nest object that contain synonyms, rules",
           "additionalProperties": false,
           "properties": {
             "synonyms": {
               "type": "object",
-              "additionalProperties": { "type": "string" }
+              "description": "a list of [string:string] that define synonyms",
+              "additionalProperties": {
+                "type": "string"
+              },
+              "default": {
+                "link id": "Link ID",
+                "linkid": "Link ID",
+                "latitude": "Latitude / Longitude",
+                "longitude": "Latitude / Longitude",
+                "lat": "Latitude / Longitude",
+                "lon": "Latitude / Longitude",
+                "oneway": "One-Way",
+                "postal code": "Postal Code",
+                "postcode": "Postal Code",
+                "phone": "Phone Number"
+              },
+              "x-hint": "Key-value map of alternate field names"
             },
             "rules": {
-              "type": "object",
-              "additionalProperties": {
-                "oneOf": [
-                  { "type": "string" },
-                  {
-                    "type": "object",
-                    "additionalProperties": false,
-                    "properties": {
-                      "type": { "type": "string" },
-                      "allowEmpty": { "type": "boolean" },
-                      "enum": {
-                        "type": "array",
-                        "items": { "type": "string" }
-                      },
-                      "pattern": { "type": "string" }
+              "type": "array",
+              "description": "a list of [string:object] with object define how to validate the string",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Field display name"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "string",
+                      "integer",
+                      "float",
+                      "boolean"
+                    ],
+                    "description": "Expected data type"
+                  },
+                  "allowEmpty": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "enum": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
                     }
+                  },
+                  "pattern": {
+                    "type": "string"
+                  },
+                  "minimum": {
+                    "type": "number"
+                  },
+                  "maximum": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "name",
+                  "type"
+                ]
+              },
+              "examples": [
+                [
+                  {
+                    "name": "type",
+                    "type": "string"
+                  },
+                  {
+                    "name": "link id",
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  {
+                    "name": "latitude",
+                    "type": "float",
+                    "minimum": -90,
+                    "maximum": 90
+                  },
+                  {
+                    "name": "longitude",
+                    "type": "float",
+                    "minimum": -180,
+                    "maximum": 180
+                  },
+                  {
+                    "name": "node type",
+                    "type": "string",
+                    "allowEmpty": false,
+                    "enum": [
+                      "intersection",
+                      "termination of a link",
+                      "change of attribution",
+                      "shape point"
+                    ]
+                  },
+                  {
+                    "name": "z-level",
+                    "type": "string"
+                  },
+                  {
+                    "name": "aligned",
+                    "type": "boolean"
+                  },
+                  {
+                    "name": "street name",
+                    "type": "string"
+                  },
+                  {
+                    "name": "address range",
+                    "type": "string"
+                  },
+                  {
+                    "name": "address scheme",
+                    "type": "string",
+                    "allowEmpty": true,
+                    "enum": [
+                      "Even",
+                      "Odd",
+                      "Mixed"
+                    ]
+                  },
+                  {
+                    "name": "one-way",
+                    "type": "boolean"
+                  },
+                  {
+                    "name": "access characteristics",
+                    "type": "string"
+                  },
+                  {
+                    "name": "functional class",
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 5
+                  },
+                  {
+                    "name": "language code",
+                    "type": "string"
+                  },
+                  {
+                    "name": "country",
+                    "type": "string"
+                  },
+                  {
+                    "name": "postal code",
+                    "type": "string"
+                  },
+                  {
+                    "name": "cartography feature",
+                    "type": "string",
+                    "allowEmpty": false
+                  },
+                  {
+                    "name": "polygon formation",
+                    "type": "string",
+                    "allowEmpty": false
+                  },
+                  {
+                    "name": "poi category",
+                    "type": "string",
+                    "allowEmpty": false
+                  },
+                  {
+                    "name": "poi name",
+                    "type": "string"
+                  },
+                  {
+                    "name": "phone number",
+                    "type": "string",
+                    "allowEmpty": true,
+                    "pattern": "^\\+?[0-9 \\-/()]{3,}$"
+                  },
+                  {
+                    "name": "open 24 hours",
+                    "type": "boolean"
+                  },
+                  {
+                    "name": "parent/child poi",
+                    "type": "string"
+                  },
+                  {
+                    "name": "tollway",
+                    "type": "string"
+                  },
+                  {
+                    "name": "private",
+                    "type": "string"
+                  },
+                  {
+                    "name": "public_access",
+                    "type": "string"
                   }
                 ]
-              }
+              ],
+              "x-hint": "Define per-field validation rules"
             }
-          }
+          },
+          "required": [
+            "synonyms",
+            "rules"
+          ]
         },
         "LinksTableRule": {
           "type": "object",
+          "description": "type nest object that contain check_private, check_tollway, check_public_access, boolean_tokens, expectedHeaders",
           "additionalProperties": false,
           "properties": {
-            "check_private": { "type": "boolean" },
-            "check_tollway": { "type": "boolean" },
-            "check_public_access": { "type": "boolean" },
-            "#notes": { "type": "string" },
+            "check_private": {
+              "type": "boolean",
+              "default": false,
+              "examples": [
+                false
+              ],
+              "x-hint": "If true, validate 'PRIVATE' via DataTypeValidationRule"
+            },
+            "check_tollway": {
+              "type": "boolean",
+              "default": false,
+              "examples": [
+                false
+              ],
+              "x-hint": "If true, validate 'TOLLWAY' via DataTypeValidationRule"
+            },
+            "check_public_access": {
+              "type": "boolean",
+              "default": false,
+              "examples": [
+                false
+              ],
+              "x-hint": "If true, validate 'PUBLIC_ACCESS' via DataTypeValidationRule"
+            },
             "boolean_tokens": {
               "type": "array",
-              "items": { "type": "string" },
-              "minItems": 1
+              "items": {
+                "type": "string"
+              },
+              "default": [
+                "true",
+                "false",
+                "1",
+                "0",
+                "yes",
+                "no"
+              ],
+              "examples": [
+                [
+                  "true",
+                  "false",
+                  "1",
+                  "0",
+                  "yes",
+                  "no"
+                ]
+              ],
+              "x-hint": "Tokens treated as boolean"
             },
             "expectedHeaders": {
               "type": "array",
-              "items": { "type": "string" },
-              "minItems": 1
+              "items": {
+                "type": "string"
+              },
+              "default": [
+                "LINK_ID",
+                "ACCESS_ID",
+                "FUNCTIONAL_CLASS",
+                "TRAVEL_DIRECTION",
+                "PRIVATE",
+                "TOLLWAY",
+                "FROM_SPEED_LIMIT",
+                "TO_SPEED_LIMIT",
+                "PUBLIC_ACCESS"
+              ],
+              "examples": [
+                [
+                  "LINK_ID",
+                  "ACCESS_ID",
+                  "FUNCTIONAL_CLASS",
+                  "TRAVEL_DIRECTION",
+                  "PRIVATE",
+                  "TOLLWAY",
+                  "FROM_SPEED_LIMIT",
+                  "TO_SPEED_LIMIT",
+                  "PUBLIC_ACCESS"
+                ]
+              ],
+              "x-hint": "Expected CSV header names"
             }
-          }
+          },
+          "required": [
+            "check_private",
+            "check_tollway",
+            "check_public_access",
+            "boolean_tokens",
+            "expectedHeaders"
+          ]
         }
       }
     }
-  }
+  },
+  "required": [
+    "log",
+    "configPath",
+    "autoRules",
+    "parallelism",
+    "parallelismByMode",
+    "maxTasksInFlight",
+    "report",
+    "alerts",
+    "configureRules"
+  ]
 }

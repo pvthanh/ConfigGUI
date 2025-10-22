@@ -43,8 +43,11 @@ QWidget* WidgetFactory::createWidget(const json& schema, QWidget* parent)
                 const auto& items = schema["items"];
                 if (items.contains("enum"))
                 {
-                    // Array of enums - create combo box for the single selection or text area for multi
-                    return createStringWidget(schema, parent);
+                    // Array of enums - create text edit showing comma-separated enum values
+                    auto* widget = new QLineEdit(parent);
+                    widget->setPlaceholderText("Enter comma-separated values");
+                    widget->setToolTip("Array of enumerated values. Separate multiple values with commas.");
+                    return widget;
                 }
                 if (items.is_object() && items.contains("type"))
                 {
@@ -54,6 +57,15 @@ QWidget* WidgetFactory::createWidget(const json& schema, QWidget* parent)
                         // Array of strings - treat as multi-line text
                         auto* widget = new QLineEdit(parent);
                         widget->setPlaceholderText("Comma-separated values");
+                        widget->setToolTip("Array of strings. Separate multiple values with commas.");
+                        return widget;
+                    }
+                    else if (item_type == "integer" || item_type == "number")
+                    {
+                        // Array of numbers
+                        auto* widget = new QLineEdit(parent);
+                        widget->setPlaceholderText("Comma-separated numbers");
+                        widget->setToolTip("Array of numbers. Separate multiple values with commas.");
                         return widget;
                     }
                 }
@@ -62,6 +74,7 @@ QWidget* WidgetFactory::createWidget(const json& schema, QWidget* parent)
             {
                 auto* widget = new QLineEdit(parent);
                 widget->setPlaceholderText("Array input");
+                widget->setToolTip("Array. Separate multiple values with commas.");
                 return widget;
             }
         default:
