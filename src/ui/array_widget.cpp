@@ -167,16 +167,19 @@ json ArrayWidget::getValues() const
 
     for (int i = 0; i < items_layout_->count(); ++i)
     {
-        QWidget* item_widget = items_layout_->itemAt(i)->widget();
-        if (!item_widget) continue;
+        QWidget* item_container = items_layout_->itemAt(i)->widget();
+        if (item_container == nullptr)
+        {
+            continue;
+        }
 
         QString value;
 
-        if (auto* combo = qobject_cast<QComboBox*>(item_widget))
+        if (auto* combo = item_container->findChild<QComboBox*>())
         {
             value = combo->currentText();
         }
-        else if (auto* line_edit = qobject_cast<QLineEdit*>(item_widget))
+        else if (auto* line_edit = item_container->findChild<QLineEdit*>())
         {
             value = line_edit->text();
         }
