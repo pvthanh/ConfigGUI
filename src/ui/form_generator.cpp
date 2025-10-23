@@ -888,7 +888,19 @@ void FormGenerator::updateFieldValue(const QString& field_name, const json& valu
         {
             std::cerr << "[FormGenerator::updateFieldValue] Setting ObjectArrayWidget values for field: " 
                       << field_name.toStdString() << ", array size: " << value.size() << std::endl;
-            obj_array_widget->setValues(value);
+            if (!value.empty())
+            {
+                obj_array_widget->setValues(value);
+            }
+            else
+            {
+                std::cerr << "[FormGenerator::updateFieldValue] Skipping empty array for field: " << field_name.toStdString() << std::endl;
+            }
+        }
+        else
+        {
+            std::cerr << "[FormGenerator::updateFieldValue] ERROR: Value is not an array for ObjectArrayWidget field: " 
+                      << field_name.toStdString() << ", type: " << static_cast<int>(value.type()) << std::endl;
         }
     }
 }

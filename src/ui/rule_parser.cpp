@@ -191,18 +191,62 @@ json RuleParser::convertNewFormatToOld(const json& rules_obj)
     {
         std::string field_name = it.key();
         std::string shorthand;
+        RuleDefinition rule;
+        rule.name = field_name;
 
         if (it.value().is_string())
         {
+            // Shorthand string format: "type[min,max]", "type?", etc.
             shorthand = it.value().get<std::string>();
+            rule = parseShorthand(field_name, shorthand);
+        }
+        else if (it.value().is_object())
+        {
+            // Inline rule object format: { "type": "string", "allowEmpty": false, "enum": [...] }
+            const json& inline_rule = it.value();
+            
+            // Extract fields from inline object
+            if (inline_rule.contains("type") && inline_rule["type"].is_string())
+            {
+                rule.type = inline_rule["type"].get<std::string>();
+            }
+            
+            if (inline_rule.contains("allowEmpty") && inline_rule["allowEmpty"].is_boolean())
+            {
+                rule.allow_empty = inline_rule["allowEmpty"].get<bool>();
+            }
+            
+            if (inline_rule.contains("pattern") && inline_rule["pattern"].is_string())
+            {
+                rule.pattern = inline_rule["pattern"].get<std::string>();
+            }
+            
+            if (inline_rule.contains("minimum") && inline_rule["minimum"].is_number())
+            {
+                rule.minimum = inline_rule["minimum"].get<double>();
+            }
+            
+            if (inline_rule.contains("maximum") && inline_rule["maximum"].is_number())
+            {
+                rule.maximum = inline_rule["maximum"].get<double>();
+            }
+            
+            if (inline_rule.contains("enum") && inline_rule["enum"].is_array())
+            {
+                for (const auto& enum_val : inline_rule["enum"])
+                {
+                    if (enum_val.is_string())
+                    {
+                        rule.enum_values.push_back(enum_val.get<std::string>());
+                    }
+                }
+            }
         }
         else
         {
+            // Skip unsupported formats
             continue;
         }
-
-        // Parse shorthand to RuleDefinition
-        RuleDefinition rule = parseShorthand(field_name, shorthand);
 
         // Convert to old format object
         json old_rule = json::object();
