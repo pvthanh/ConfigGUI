@@ -5,6 +5,7 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
+#include <QComboBox>
 
 namespace configgui {
 namespace ui {
@@ -112,8 +113,21 @@ void ArrayWidget::addItemWidget(const QString& value)
     item_layout->addWidget(item_widget, 1);
     items_layout_->addWidget(item_container);
 
-    connect(item_widget, SIGNAL(currentTextChanged(const QString&)), this, SIGNAL(valuesChanged()));
-    connect(item_widget, SIGNAL(textChanged(const QString&)), this, SIGNAL(valuesChanged()));
+    // Connect change signals based on the concrete widget type
+    if (auto* combo = qobject_cast<QComboBox*>(item_widget))
+    {
+        // Emit on selection changes and text changes
+        connect(combo, &QComboBox::currentIndexChanged, this, &ArrayWidget::valuesChanged);
+        connect(combo, &QComboBox::currentTextChanged, this, &ArrayWidget::valuesChanged);
+        if (combo->isEditable() && combo->lineEdit() != nullptr)
+        {
+            connect(combo->lineEdit(), &QLineEdit::textChanged, this, &ArrayWidget::valuesChanged);
+        }
+    }
+    else if (auto* line_edit = qobject_cast<QLineEdit*>(item_widget))
+    {
+        connect(line_edit, &QLineEdit::textChanged, this, &ArrayWidget::valuesChanged);
+    }
 
     updateAddRemoveButtons();
 }

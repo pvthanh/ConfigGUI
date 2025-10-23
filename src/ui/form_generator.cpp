@@ -736,27 +736,29 @@ void FormGenerator::setFormData(const json& data)
         return;
     }
 
-    // Handle nested objects (e.g., application, server, database sections)
-    for (auto it = data.begin(); it != data.end(); ++it)
+    // Recursively apply values at any nesting level
+    applyDataRecursive(data);
+
+    is_dirty_ = false;
+}
+
+void FormGenerator::applyDataRecursive(const json& obj)
+{
+    for (auto it = obj.begin(); it != obj.end(); ++it)
     {
+        const std::string key = it.key();
         const json& value = it.value();
-        
-        // If the value is a nested object, recursively update its fields
+
         if (value.is_object())
         {
-            for (auto nested_it = value.begin(); nested_it != value.end(); ++nested_it)
-            {
-                updateFieldValue(QString::fromStdString(nested_it.key()), nested_it.value());
-            }
+            // Keep descending until we reach leaf values (non-object)
+            applyDataRecursive(value);
         }
         else
         {
-            // Otherwise update the field directly
-            updateFieldValue(QString::fromStdString(it.key()), value);
+            updateFieldValue(QString::fromStdString(key), value);
         }
     }
-
-    is_dirty_ = false;
 }
 
 void FormGenerator::updateFieldValue(const QString& field_name, const json& value)

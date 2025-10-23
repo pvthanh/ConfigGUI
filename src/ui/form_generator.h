@@ -87,6 +87,7 @@ private:
     void addSimpleFieldToForm(const QString& field_name, const json& field_schema);
     void addFieldToFormWithMetadata(QVBoxLayout* parent_layout, const QString& field_name, const json& field_schema);
     void updateFieldValue(const QString& field_name, const json& value);
+    void applyDataRecursive(const json& obj);
 };
 
 } // namespace ui
