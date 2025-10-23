@@ -4,6 +4,8 @@
 
 #include <QApplication>
 #include "ui/main_window.h"
+#include "utils/logger.h"
+#include "utils/crash_handler.h"
 
 int main(int argc, char* argv[])
 {
@@ -37,9 +39,27 @@ int main(int argc, char* argv[])
     );
     app.setStyleSheet(kGlobalStyle);
 
-    // Create and show main window
-    configgui::ui::MainWindow window;
-    window.show();
+    // Initialize logging and crash handlers early
+    configgui::utils::Logger::init("configgui.log", true, configgui::utils::Logger::Level::Debug);
+    configgui::utils::installCrashHandlers("/tmp/configgui_crash.log");
+    configgui::utils::installQtMessageHandler();
+    configgui::utils::installTerminateHandler();
 
-    return app.exec();
+    try
+    {
+        // Create and show main window
+        configgui::ui::MainWindow window;
+        window.show();
+        return app.exec();
+    }
+    catch (const std::exception& e)
+    {
+        configgui::utils::Logger::error(std::string("Unhandled exception: ") + e.what());
+    }
+    catch (...)
+    {
+        configgui::utils::Logger::error("Unhandled non-standard exception in main");
+    }
+
+    return 1;
 }

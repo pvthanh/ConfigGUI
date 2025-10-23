@@ -78,22 +78,39 @@ void PathSelectorWidget::chooseFile()
 {
     const QString start_dir = edit_->text().isEmpty() ? QString() : QFileInfo(edit_->text()).absolutePath();
     const QString filter = file_filter_.isEmpty() ? QStringLiteral("All Files (*.*)") : file_filter_;
-    const QString file = QFileDialog::getOpenFileName(this, tr("Select file"), start_dir, filter);
-    if (!file.isEmpty())
+
+    // Use non-native dialog to avoid GNOME/portal crashes on some systems
+    QFileDialog dialog(this, tr("Select file"), start_dir, filter);
+    dialog.setOptions(QFileDialog::DontUseNativeDialog);
+    dialog.setFileMode(QFileDialog::ExistingFile);
+    if (dialog.exec() == QDialog::Accepted)
     {
-        edit_->setText(file);
-        emit pathChanged(file);
+        const QStringList files = dialog.selectedFiles();
+        if (!files.isEmpty())
+        {
+            const QString file = files.first();
+            edit_->setText(file);
+            emit pathChanged(file);
+        }
     }
 }
 
 void PathSelectorWidget::chooseFolder()
 {
     const QString start_dir = edit_->text().isEmpty() ? QString() : QFileInfo(edit_->text()).absolutePath();
-    const QString dir = QFileDialog::getExistingDirectory(this, tr("Select folder"), start_dir, QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
-    if (!dir.isEmpty())
+    // Use non-native dialog to avoid GNOME/portal crashes on some systems
+    QFileDialog dialog(this, tr("Select folder"), start_dir);
+    dialog.setOptions(QFileDialog::DontUseNativeDialog | QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+    dialog.setFileMode(QFileDialog::Directory);
+    if (dialog.exec() == QDialog::Accepted)
     {
-        edit_->setText(dir);
-        emit pathChanged(dir);
+        const QStringList dirs = dialog.selectedFiles();
+        if (!dirs.isEmpty())
+        {
+            const QString dir = dirs.first();
+            edit_->setText(dir);
+            emit pathChanged(dir);
+        }
     }
 }
 

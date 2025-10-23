@@ -112,6 +112,8 @@ set(UTILS_SOURCES
     src/utils/string_utils.cpp
     src/utils/file_utils.h
     src/utils/file_utils.cpp
+    src/utils/crash_handler.h
+    src/utils/crash_handler.cpp
 )
 
 # Main application executable
