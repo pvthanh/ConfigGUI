@@ -8,6 +8,7 @@
 #include "range_widget.h"
 #include "dictionary_widget.h"
 #include "object_array_widget.h"
+#include "rule_parser.h"
 #include <QLineEdit>
 #include <QSpinBox>
 #include <QDoubleSpinBox>
@@ -18,6 +19,7 @@
 #include <QHBoxLayout>
 #include <QToolButton>
 #include <QPropertyAnimation>
+#include <iostream>
 
 namespace configgui {
 namespace ui {
@@ -747,15 +749,48 @@ void FormGenerator::applyDataRecursive(const json& obj)
     for (auto it = obj.begin(); it != obj.end(); ++it)
     {
         const std::string key = it.key();
-        const json& value = it.value();
+        json value = it.value();  // Make a copy so we can modify if needed
+
+        // DEBUG: Log what we're processing
+        std::cerr << "[FormGenerator::applyDataRecursive] Processing key: " << key 
+                  << ", is_object: " << value.is_object() 
+                  << ", is_array: " << value.is_array() << std::endl;
+
+        // Special handling for "rules" field: convert shorthand dictionary format to array format
+        if (key == "rules" && value.is_object() && !value.is_array())
+        {
+            // Check if this looks like the shorthand dictionary format (keys are field names)
+            // vs. a real nested object
+            bool is_shorthand_format = false;
+            for (auto rule_it = value.begin(); rule_it != value.end(); ++rule_it)
+            {
+                // If the value is a string (shorthand) or object (inline rule), it's shorthand format
+                if (rule_it.value().is_string() || 
+                    (rule_it.value().is_object() && (rule_it.value().contains("type") || rule_it.value().contains("allowEmpty"))))
+                {
+                    is_shorthand_format = true;
+                    break;
+                }
+            }
+            
+            if (is_shorthand_format)
+            {
+                std::cerr << "[FormGenerator::applyDataRecursive] Converting rules from shorthand dictionary format to array" << std::endl;
+                // Convert shorthand dictionary format to array format
+                value = RuleParser::convertNewFormatToOld(value);
+                std::cerr << "[FormGenerator::applyDataRecursive] Converted rules, new size: " << (value.is_array() ? value.size() : 0) << std::endl;
+            }
+        }
 
         if (value.is_object())
         {
             // Keep descending until we reach leaf values (non-object)
+            std::cerr << "[FormGenerator::applyDataRecursive] Recursing into object: " << key << std::endl;
             applyDataRecursive(value);
         }
         else
         {
+            std::cerr << "[FormGenerator::applyDataRecursive] Calling updateFieldValue for key: " << key << std::endl;
             updateFieldValue(QString::fromStdString(key), value);
         }
     }
@@ -763,8 +798,17 @@ void FormGenerator::applyDataRecursive(const json& obj)
 
 void FormGenerator::updateFieldValue(const QString& field_name, const json& value)
 {
+    std::cerr << "[FormGenerator::updateFieldValue] Attempting to update field: " << field_name.toStdString() 
+              << ", field exists in field_widgets_: " << (field_widgets_.contains(field_name) ? "YES" : "NO") << std::endl;
+    
     if (!field_widgets_.contains(field_name))
     {
+        std::cerr << "[FormGenerator::updateFieldValue] Field not found, available fields: ";
+        for (auto it = field_widgets_.begin(); it != field_widgets_.end(); ++it)
+        {
+            std::cerr << it.key().toStdString() << " ";
+        }
+        std::cerr << std::endl;
         return;
     }
 
@@ -842,6 +886,8 @@ void FormGenerator::updateFieldValue(const QString& field_name, const json& valu
     {
         if (value.is_array())
         {
+            std::cerr << "[FormGenerator::updateFieldValue] Setting ObjectArrayWidget values for field: " 
+                      << field_name.toStdString() << ", array size: " << value.size() << std::endl;
             obj_array_widget->setValues(value);
         }
     }
