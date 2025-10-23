@@ -299,14 +299,52 @@ void MainWindow::loadConfiguration(const QString& file_path)
 
 void MainWindow::onFileSave()
 {
-    // Check if we have a form generator and configuration loaded
-    if (!form_generator_ || current_config_file_.isEmpty())
+    // Check if we have a form generator
+    if (!form_generator_)
     {
         QMessageBox::warning(this, tr("Cannot Save"),
-            tr("No configuration loaded. Please load a configuration file first."));
+            tr("No form available. Please load a schema first."));
         return;
     }
 
+    QString save_path = current_config_file_;
+
+    // If no configuration is currently loaded, ask user where to save
+    if (current_config_file_.isEmpty())
+    {
+        save_path = QFileDialog::getSaveFileName(this,
+            tr("Save New Configuration"), "",
+            tr("JSON Configuration Files (*.json);;All Files (*)"));
+        
+        if (save_path.isEmpty())
+        {
+            return;  // User cancelled
+        }
+    }
+    else
+    {
+        // Configuration is loaded - ask if user wants to overwrite it
+        QMessageBox::StandardButton reply = QMessageBox::question(this,
+            tr("Overwrite Configuration?"),
+            tr("Do you want to overwrite the current configuration file?\n\nFile: %1\n\nClick 'No' to save to a different location.")
+                .arg(QFileInfo(current_config_file_).fileName()),
+            QMessageBox::Yes | QMessageBox::No);
+
+        if (reply == QMessageBox::No)
+        {
+            // User chose not to overwrite - open file chooser
+            save_path = QFileDialog::getSaveFileName(this,
+                tr("Save Configuration As"), current_config_file_,
+                tr("JSON Configuration Files (*.json);;All Files (*)"));
+            
+            if (save_path.isEmpty())
+            {
+                return;  // User cancelled
+            }
+        }
+    }
+
+    // Now save to the determined path
     try
     {
         // Get current form data
@@ -317,16 +355,22 @@ void MainWindow::onFileSave()
         QString content = QString::fromStdString(json_string);
 
         // Write to file
-        QFile file(current_config_file_);
+        QFile file(save_path);
         if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
         {
             QMessageBox::critical(this, tr("Error"),
-                tr("Cannot write to file: %1").arg(current_config_file_));
+                tr("Cannot write to file: %1").arg(save_path));
             return;
         }
 
         file.write(content.toUtf8());
         file.close();
+
+        // Update the current config file path if we saved to a new location
+        if (save_path != current_config_file_)
+        {
+            current_config_file_ = save_path;
+        }
 
         // Mark form as clean
         if (form_generator_)
@@ -337,11 +381,11 @@ void MainWindow::onFileSave()
         // Update status
         if (status_label_)
         {
-            status_label_->setText(tr("Saved config: %1").arg(QFileInfo(current_config_file_).fileName()));
+            status_label_->setText(tr("Saved config: %1").arg(QFileInfo(save_path).fileName()));
         }
 
         QMessageBox::information(this, tr("Configuration Saved"),
-            tr("Configuration saved successfully!\n\nFile: %1").arg(current_config_file_));
+            tr("Configuration saved successfully!\n\nFile: %1").arg(save_path));
     }
     catch (const std::exception& e)
     {
