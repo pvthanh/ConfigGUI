@@ -762,23 +762,38 @@ void FormGenerator::applyDataRecursive(const json& obj)
             // Check if this looks like the shorthand dictionary format (keys are field names)
             // vs. a real nested object
             bool is_shorthand_format = false;
-            for (auto rule_it = value.begin(); rule_it != value.end(); ++rule_it)
+            try
             {
-                // If the value is a string (shorthand) or object (inline rule), it's shorthand format
-                if (rule_it.value().is_string() || 
-                    (rule_it.value().is_object() && (rule_it.value().contains("type") || rule_it.value().contains("allowEmpty"))))
+                for (auto rule_it = value.begin(); rule_it != value.end(); ++rule_it)
                 {
-                    is_shorthand_format = true;
-                    break;
+                    // If the value is a string (shorthand) or object (inline rule), it's shorthand format
+                    if (rule_it.value().is_string() || 
+                        (rule_it.value().is_object() && (rule_it.value().contains("type") || rule_it.value().contains("allowEmpty"))))
+                    {
+                        is_shorthand_format = true;
+                        break;
+                    }
                 }
+            }
+            catch (const std::exception& e)
+            {
+                std::cerr << "[FormGenerator::applyDataRecursive] Exception while detecting shorthand format: " << e.what() << std::endl;
+                is_shorthand_format = false;
             }
             
             if (is_shorthand_format)
             {
-                std::cerr << "[FormGenerator::applyDataRecursive] Converting rules from shorthand dictionary format to array" << std::endl;
-                // Convert shorthand dictionary format to array format
-                value = RuleParser::convertNewFormatToOld(value);
-                std::cerr << "[FormGenerator::applyDataRecursive] Converted rules, new size: " << (value.is_array() ? value.size() : 0) << std::endl;
+                try
+                {
+                    std::cerr << "[FormGenerator::applyDataRecursive] Converting rules from shorthand dictionary format to array" << std::endl;
+                    // Convert shorthand dictionary format to array format
+                    value = RuleParser::convertNewFormatToOld(value);
+                    std::cerr << "[FormGenerator::applyDataRecursive] Converted rules, new size: " << (value.is_array() ? value.size() : 0) << std::endl;
+                }
+                catch (const std::exception& e)
+                {
+                    std::cerr << "[FormGenerator::applyDataRecursive] Exception while converting rules: " << e.what() << std::endl;
+                }
             }
         }
 
