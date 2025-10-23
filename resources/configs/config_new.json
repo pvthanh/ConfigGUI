@@ -1,0 +1,35 @@
+{
+  "alerts": {
+    "configPath": "config/alerts.local.json",
+    "enabled": true
+  },
+  "autoRules": {
+    "3d-landmarks": 2,
+    "default": [
+      "3DFileCompletenessRule"
+    ],
+    "rdf": 3,
+    "rootRules": [
+      "RootStructureRule"
+    ],
+    "shapefiles": 2
+  },
+  "configureRules": {},
+  "log": {
+    "configPath": "config/alerts.local.json",
+    "file": "output/navteq-validator.log",
+    "level": "info"
+  },
+  "maxTasksInFlight": 8,
+  "parallelism": 4,
+  "parallelismByMode": {
+    "3d-landmarks": 2,
+    "auto": 4,
+    "rdf": 3,
+    "shapefiles": 2
+  },
+  "report": {
+    "csv": "output/report.csv",
+    "json": "output/report.json"
+  }
+}

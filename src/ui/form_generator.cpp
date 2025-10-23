@@ -552,178 +552,95 @@ void FormGenerator::addSimpleFieldToForm(const QString& field_name, const json& 
 
 json FormGenerator::getFormData() const
 {
+    // Use recursive collection to handle multi-level nested structures
+    return collectDataRecursive(schema_);
+}
+
+json FormGenerator::collectDataRecursive(const json& schema) const
+{
     json data = json::object();
 
-    // If we have a schema with nested objects, reconstruct that structure
-    if (schema_.contains("properties"))
+    if (!schema.contains("properties"))
     {
-        const auto& properties = schema_["properties"];
-        
-        for (auto it = properties.begin(); it != properties.end(); ++it)
+        return data;
+    }
+
+    const auto& properties = schema["properties"];
+
+    for (auto it = properties.begin(); it != properties.end(); ++it)
+    {
+        const std::string key = it.key();
+        const json& prop_schema = it.value();
+        const QString q_key = QString::fromStdString(key);
+
+        // Check if this is a nested object with properties
+        if (prop_schema.is_object() && prop_schema.contains("properties"))
         {
-            const QString section_name = QString::fromStdString(it.key());
-            const json& section_schema = it.value();
+            const std::string type_str = prop_schema.contains("type") && prop_schema["type"].is_string() ?
+                                         prop_schema["type"].get<std::string>() : "";
 
-            // Check if this is a nested object
-            if (section_schema.is_object() && section_schema.contains("properties") &&
-                section_schema["type"].is_string() && section_schema["type"].get<std::string>() == "object")
+            if (type_str == "object")
             {
-                // Create a nested object
-                json nested_obj = json::object();
-                const auto& nested_properties = section_schema["properties"];
-
-                for (auto nested_it = nested_properties.begin(); nested_it != nested_properties.end(); ++nested_it)
-                {
-                    const QString nested_field_name = QString::fromStdString(nested_it.key());
-                    
-                    // Get value from field widget
-                    if (field_widgets_.contains(nested_field_name))
-                    {
-                        const FieldWidget& fw = field_widgets_[nested_field_name];
-
-                        if (auto* line_edit = qobject_cast<QLineEdit*>(fw.widget))
-                        {
-                            nested_obj[nested_field_name.toStdString()] = line_edit->text().toStdString();
-                        }
-                        else if (auto* path_widget = qobject_cast<PathSelectorWidget*>(fw.widget))
-                        {
-                            nested_obj[nested_field_name.toStdString()] = path_widget->text().toStdString();
-                        }
-                        else if (auto* combo_box = qobject_cast<QComboBox*>(fw.widget))
-                        {
-                            nested_obj[nested_field_name.toStdString()] = combo_box->currentText().toStdString();
-                        }
-                        else if (auto* spin_box = qobject_cast<QSpinBox*>(fw.widget))
-                        {
-                            nested_obj[nested_field_name.toStdString()] = spin_box->value();
-                        }
-                        else if (auto* double_spin = qobject_cast<QDoubleSpinBox*>(fw.widget))
-                        {
-                            nested_obj[nested_field_name.toStdString()] = double_spin->value();
-                        }
-                        else if (auto* check_box = qobject_cast<QCheckBox*>(fw.widget))
-                        {
-                            nested_obj[nested_field_name.toStdString()] = check_box->isChecked();
-                        }
-                        else if (auto* array_widget = qobject_cast<ArrayWidget*>(fw.widget))
-                        {
-                            nested_obj[nested_field_name.toStdString()] = array_widget->getValues();
-                        }
-                        else if (auto* range_widget = qobject_cast<RangeWidget*>(fw.widget))
-                        {
-                            nested_obj[nested_field_name.toStdString()] = range_widget->getValues();
-                        }
-                        else if (auto* dict_widget = qobject_cast<DictionaryWidget*>(fw.widget))
-                        {
-                            nested_obj[nested_field_name.toStdString()] = dict_widget->getValues();
-                        }
-                        else if (auto* obj_array_widget = qobject_cast<ObjectArrayWidget*>(fw.widget))
-                        {
-                            nested_obj[nested_field_name.toStdString()] = obj_array_widget->getValues();
-                        }
-                    }
-                }
-
-                data[section_name.toStdString()] = nested_obj;
+                // Recursively collect nested object data
+                data[key] = collectDataRecursive(prop_schema);
             }
             else
             {
-                // Simple field at top level
-                if (field_widgets_.contains(section_name))
+                // Handle as a regular property if not explicitly object type
+                if (field_widgets_.contains(q_key))
                 {
-                    const FieldWidget& fw = field_widgets_[section_name];
-
+                    const FieldWidget& fw = field_widgets_[q_key];
+                    
                     if (auto* line_edit = qobject_cast<QLineEdit*>(fw.widget))
-                    {
-                        data[section_name.toStdString()] = line_edit->text().toStdString();
-                    }
+                        data[key] = line_edit->text().toStdString();
                     else if (auto* path_widget = qobject_cast<PathSelectorWidget*>(fw.widget))
-                    {
-                        data[section_name.toStdString()] = path_widget->text().toStdString();
-                    }
+                        data[key] = path_widget->text().toStdString();
                     else if (auto* combo_box = qobject_cast<QComboBox*>(fw.widget))
-                    {
-                        data[section_name.toStdString()] = combo_box->currentText().toStdString();
-                    }
+                        data[key] = combo_box->currentText().toStdString();
                     else if (auto* spin_box = qobject_cast<QSpinBox*>(fw.widget))
-                    {
-                        data[section_name.toStdString()] = spin_box->value();
-                    }
+                        data[key] = spin_box->value();
                     else if (auto* double_spin = qobject_cast<QDoubleSpinBox*>(fw.widget))
-                    {
-                        data[section_name.toStdString()] = double_spin->value();
-                    }
+                        data[key] = double_spin->value();
                     else if (auto* check_box = qobject_cast<QCheckBox*>(fw.widget))
-                    {
-                        data[section_name.toStdString()] = check_box->isChecked();
-                    }
+                        data[key] = check_box->isChecked();
                     else if (auto* array_widget = qobject_cast<ArrayWidget*>(fw.widget))
-                    {
-                        data[section_name.toStdString()] = array_widget->getValues();
-                    }
+                        data[key] = array_widget->getValues();
                     else if (auto* range_widget = qobject_cast<RangeWidget*>(fw.widget))
-                    {
-                        data[section_name.toStdString()] = range_widget->getValues();
-                    }
+                        data[key] = range_widget->getValues();
                     else if (auto* dict_widget = qobject_cast<DictionaryWidget*>(fw.widget))
-                    {
-                        data[section_name.toStdString()] = dict_widget->getValues();
-                    }
+                        data[key] = dict_widget->getValues();
                     else if (auto* obj_array_widget = qobject_cast<ObjectArrayWidget*>(fw.widget))
-                    {
-                        data[section_name.toStdString()] = obj_array_widget->getValues();
-                    }
+                        data[key] = obj_array_widget->getValues();
                 }
             }
         }
-    }
-    else
-    {
-        // Fallback to flat structure
-        for (auto it = field_widgets_.begin(); it != field_widgets_.end(); ++it)
+        else
         {
-            const QString& field_name = it.key();
-            const FieldWidget& fw = it.value();
-
-            if (auto* line_edit = qobject_cast<QLineEdit*>(fw.widget))
+            // Simple field - try to get from field_widgets_
+            if (field_widgets_.contains(q_key))
             {
-                data[field_name.toStdString()] = line_edit->text().toStdString();
-            }
-            else if (auto* path_widget = qobject_cast<PathSelectorWidget*>(fw.widget))
-            {
-                data[field_name.toStdString()] = path_widget->text().toStdString();
-            }
-            else if (auto* combo_box = qobject_cast<QComboBox*>(fw.widget))
-            {
-                data[field_name.toStdString()] = combo_box->currentText().toStdString();
-            }
-            else if (auto* spin_box = qobject_cast<QSpinBox*>(fw.widget))
-            {
-                data[field_name.toStdString()] = spin_box->value();
-            }
-            else if (auto* double_spin = qobject_cast<QDoubleSpinBox*>(fw.widget))
-            {
-                data[field_name.toStdString()] = double_spin->value();
-            }
-            else if (auto* check_box = qobject_cast<QCheckBox*>(fw.widget))
-            {
-                data[field_name.toStdString()] = check_box->isChecked();
-            }
-            else if (auto* array_widget = qobject_cast<ArrayWidget*>(fw.widget))
-            {
-                data[field_name.toStdString()] = array_widget->getValues();
-            }
-            else if (auto* range_widget = qobject_cast<RangeWidget*>(fw.widget))
-            {
-                data[field_name.toStdString()] = range_widget->getValues();
-            }
-            else if (auto* dict_widget = qobject_cast<DictionaryWidget*>(fw.widget))
-            {
-                data[field_name.toStdString()] = dict_widget->getValues();
-            }
-            else if (auto* obj_array_widget = qobject_cast<ObjectArrayWidget*>(fw.widget))
-            {
-                data[field_name.toStdString()] = obj_array_widget->getValues();
+                const FieldWidget& fw = field_widgets_[q_key];
+                
+                if (auto* line_edit = qobject_cast<QLineEdit*>(fw.widget))
+                    data[key] = line_edit->text().toStdString();
+                else if (auto* path_widget = qobject_cast<PathSelectorWidget*>(fw.widget))
+                    data[key] = path_widget->text().toStdString();
+                else if (auto* combo_box = qobject_cast<QComboBox*>(fw.widget))
+                    data[key] = combo_box->currentText().toStdString();
+                else if (auto* spin_box = qobject_cast<QSpinBox*>(fw.widget))
+                    data[key] = spin_box->value();
+                else if (auto* double_spin = qobject_cast<QDoubleSpinBox*>(fw.widget))
+                    data[key] = double_spin->value();
+                else if (auto* check_box = qobject_cast<QCheckBox*>(fw.widget))
+                    data[key] = check_box->isChecked();
+                else if (auto* array_widget = qobject_cast<ArrayWidget*>(fw.widget))
+                    data[key] = array_widget->getValues();
+                else if (auto* range_widget = qobject_cast<RangeWidget*>(fw.widget))
+                    data[key] = range_widget->getValues();
+                else if (auto* dict_widget = qobject_cast<DictionaryWidget*>(fw.widget))
+                    data[key] = dict_widget->getValues();
+                else if (auto* obj_array_widget = qobject_cast<ObjectArrayWidget*>(fw.widget))
+                    data[key] = obj_array_widget->getValues();
             }
         }
     }
