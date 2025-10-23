@@ -18,6 +18,7 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QToolButton>
+#include <typeinfo>
 #include <QPropertyAnimation>
 #include <iostream>
 
@@ -405,6 +406,27 @@ void FormGenerator::addFieldToFormWithMetadata(QVBoxLayout* parent_layout, const
     // Track the field widget
     FieldWidget fw{widget, field_name, field_schema};
     field_widgets_[field_name] = fw;
+    
+    // Debug: Log field registration
+    std::cerr << "[addFieldToFormWithMetadata] Registered field: " << field_name.toStdString() 
+              << ", widget type: ";
+    if (qobject_cast<ArrayWidget*>(widget))
+        std::cerr << "ArrayWidget";
+    else if (qobject_cast<ObjectArrayWidget*>(widget))
+        std::cerr << "ObjectArrayWidget";
+    else if (qobject_cast<DictionaryWidget*>(widget))
+        std::cerr << "DictionaryWidget";
+    else if (qobject_cast<RangeWidget*>(widget))
+        std::cerr << "RangeWidget";
+    else if (qobject_cast<QComboBox*>(widget))
+        std::cerr << "QComboBox";
+    else if (qobject_cast<QLineEdit*>(widget))
+        std::cerr << "QLineEdit";
+    else if (qobject_cast<PathSelectorWidget*>(widget))
+        std::cerr << "PathSelectorWidget";
+    else
+        std::cerr << "Other";
+    std::cerr << std::endl;
 
     // Connect change signals for all widget types
     if (auto* line_edit = qobject_cast<QLineEdit*>(widget))
@@ -553,7 +575,10 @@ void FormGenerator::addSimpleFieldToForm(const QString& field_name, const json& 
 json FormGenerator::getFormData() const
 {
     // Use recursive collection to handle multi-level nested structures
-    return collectDataRecursive(schema_);
+    std::cerr << "[getFormData] Starting form data collection..." << std::endl;
+    auto result = collectDataRecursive(schema_);
+    std::cerr << "[getFormData] Completed. Result: " << result.dump(2) << std::endl;
+    return result;
 }
 
 json FormGenerator::collectDataRecursive(const json& schema) const
@@ -567,11 +592,23 @@ json FormGenerator::collectDataRecursive(const json& schema) const
 
     const auto& properties = schema["properties"];
 
+    std::cerr << "[collectDataRecursive] Processing " << properties.size() << " properties" << std::endl;
+    std::cerr << "[collectDataRecursive] field_widgets_ has " << field_widgets_.size() << " entries:" << std::endl;
+    for (auto it = field_widgets_.begin(); it != field_widgets_.end(); ++it)
+    {
+        std::cerr << "  - " << it.key().toStdString() << std::endl;
+    }
+
     for (auto it = properties.begin(); it != properties.end(); ++it)
     {
         const std::string key = it.key();
         const json& prop_schema = it.value();
         const QString q_key = QString::fromStdString(key);
+
+        std::cerr << "[collectDataRecursive] Processing property: \"" << key << "\"" << std::endl;
+        std::cerr << "  - has properties: " << (prop_schema.is_object() && prop_schema.contains("properties") ? "YES" : "NO") << std::endl;
+        std::cerr << "  - looking for key: \"" << q_key.toStdString() << "\"" << std::endl;
+        std::cerr << "  - in field_widgets: " << (field_widgets_.contains(q_key) ? "YES" : "NO") << std::endl;
 
         // Check if this is a nested object with properties
         if (prop_schema.is_object() && prop_schema.contains("properties"))
@@ -579,9 +616,12 @@ json FormGenerator::collectDataRecursive(const json& schema) const
             const std::string type_str = prop_schema.contains("type") && prop_schema["type"].is_string() ?
                                          prop_schema["type"].get<std::string>() : "";
 
+            std::cerr << "  - Found nested object, type: \"" << type_str << "\"" << std::endl;
+
             if (type_str == "object")
             {
                 // Recursively collect nested object data
+                std::cerr << "  - Recursing into nested object" << std::endl;
                 data[key] = collectDataRecursive(prop_schema);
             }
             else
@@ -621,6 +661,8 @@ json FormGenerator::collectDataRecursive(const json& schema) const
             {
                 const FieldWidget& fw = field_widgets_[q_key];
                 
+                std::cerr << "  - FOUND, attempting to get value" << std::endl;
+                
                 if (auto* line_edit = qobject_cast<QLineEdit*>(fw.widget))
                     data[key] = line_edit->text().toStdString();
                 else if (auto* path_widget = qobject_cast<PathSelectorWidget*>(fw.widget))
@@ -634,17 +676,29 @@ json FormGenerator::collectDataRecursive(const json& schema) const
                 else if (auto* check_box = qobject_cast<QCheckBox*>(fw.widget))
                     data[key] = check_box->isChecked();
                 else if (auto* array_widget = qobject_cast<ArrayWidget*>(fw.widget))
-                    data[key] = array_widget->getValues();
+                {
+                    std::cerr << "  - ArrayWidget, calling getValues()" << std::endl;
+                    auto values = array_widget->getValues();
+                    std::cerr << "  - ArrayWidget returned: " << values.dump() << std::endl;
+                    data[key] = values;
+                }
                 else if (auto* range_widget = qobject_cast<RangeWidget*>(fw.widget))
                     data[key] = range_widget->getValues();
                 else if (auto* dict_widget = qobject_cast<DictionaryWidget*>(fw.widget))
                     data[key] = dict_widget->getValues();
                 else if (auto* obj_array_widget = qobject_cast<ObjectArrayWidget*>(fw.widget))
                     data[key] = obj_array_widget->getValues();
+                    
+                std::cerr << "  - Result stored: " << data[key].dump() << std::endl;
+            }
+            else
+            {
+                std::cerr << "  - NOT FOUND in field_widgets_" << std::endl;
             }
         }
     }
 
+    std::cerr << "[collectDataRecursive] Completed" << std::endl;
     return data;
 }
 

@@ -14,7 +14,273 @@
     ],
     "shapefiles": 2
   },
-  "configureRules": {},
+  "configureRules": {
+    "3DFileCompletenessRule": {
+      "requiredSuffixes": [
+        "_L.OBJ",
+        "_L.MTL",
+        "_S.OBJ",
+        "_S.MTL",
+        "_ICON.TGA"
+      ],
+      "searchRecursively": true
+    },
+    "BuildingTableRule": {
+      "expectedHeaders": [
+        "POI_ID",
+        "POI_TYPE",
+        "LAT",
+        "LON"
+      ],
+      "require_sdo_or_wkt": true
+    },
+    "GeometryEquivalenceRule": {
+      "fieldName": "LINK_ID",
+      "tolerance": 1e-06
+    },
+    "LinksGeometryRule": {
+      "expectedHeaders": [
+        "POI_ID",
+        "POI_TYPE",
+        "LAT",
+        "LON"
+      ],
+      "require_sdo_or_wkt": true
+    },
+    "LinksTableRule": {
+      "boolean_tokens": [
+        "true",
+        "false",
+        "1",
+        "0",
+        "yes",
+        "no"
+      ],
+      "check_private": false,
+      "check_public_access": false,
+      "check_tollway": false,
+      "expectedHeaders": [
+        "POI_ID",
+        "POI_TYPE",
+        "LAT",
+        "LON"
+      ]
+    },
+    "ObjMtlReferenceRule": {
+      "allowMissingMtllib": false,
+      "caseSensitive": false,
+      "expectedMtlExtension": ".MTL"
+    },
+    "PoiTableRule": {
+      "expectedHeaders": [
+        "POI_ID",
+        "POI_TYPE",
+        "LAT",
+        "LON"
+      ],
+      "latitude_range": [
+        -90.0,
+        90.0
+      ],
+      "longitude_range": [
+        -180.0,
+        180.0
+      ]
+    },
+    "RdfIntegrityRule": {
+      "check_building_3d_subfolders": true
+    },
+    "RootStructureRule": {
+      "expected_children": [
+        "*_3DLandmarks",
+        "*_RDF",
+        "*_Shapefiles"
+      ]
+    },
+    "ShapefileCompletenessRule": {
+      "caseSensitive": false,
+      "requiredComponents": [
+        ".shx",
+        ".dbf"
+      ]
+    },
+    "ShapefilePrjRule": {
+      "acceptedTokens": [
+        "WGS 84",
+        "WGS84",
+        "WGS_1984",
+        "WGS-84",
+        "EPSG:4326",
+        "4326"
+      ]
+    },
+    "dataTypeValidationRule": {
+      "rules": [
+        {
+          "allowEmpty": false,
+          "name": "type",
+          "type": "string"
+        },
+        {
+          "allowEmpty": false,
+          "maximum": 0.0,
+          "minimum": 0.0,
+          "name": "link id",
+          "type": "integer"
+        },
+        {
+          "allowEmpty": false,
+          "maximum": 90.0,
+          "minimum": -90.0,
+          "name": "latitude",
+          "type": "float"
+        },
+        {
+          "allowEmpty": false,
+          "maximum": 180.0,
+          "minimum": -180.0,
+          "name": "longitude",
+          "type": "float"
+        },
+        {
+          "allowEmpty": false,
+          "enum": [
+            "intersection",
+            "termination of a link",
+            "change of attribution",
+            "shape point"
+          ],
+          "name": "node type",
+          "type": "string"
+        },
+        {
+          "allowEmpty": false,
+          "name": "z-level",
+          "type": "string"
+        },
+        {
+          "allowEmpty": false,
+          "name": "aligned",
+          "type": "boolean"
+        },
+        {
+          "allowEmpty": false,
+          "name": "street name",
+          "type": "string"
+        },
+        {
+          "allowEmpty": false,
+          "name": "address range",
+          "type": "string"
+        },
+        {
+          "allowEmpty": true,
+          "enum": [
+            "Even",
+            "Odd",
+            "Mixed"
+          ],
+          "name": "address scheme",
+          "type": "string"
+        },
+        {
+          "allowEmpty": false,
+          "name": "one-way",
+          "type": "boolean"
+        },
+        {
+          "allowEmpty": false,
+          "name": "access characteristics",
+          "type": "string"
+        },
+        {
+          "allowEmpty": false,
+          "maximum": 5.0,
+          "minimum": 1.0,
+          "name": "functional class",
+          "type": "integer"
+        },
+        {
+          "allowEmpty": false,
+          "name": "language code",
+          "type": "string"
+        },
+        {
+          "allowEmpty": false,
+          "name": "country",
+          "type": "string"
+        },
+        {
+          "allowEmpty": false,
+          "name": "postal code",
+          "type": "string"
+        },
+        {
+          "allowEmpty": false,
+          "name": "cartography feature",
+          "type": "string"
+        },
+        {
+          "allowEmpty": false,
+          "name": "polygon formation",
+          "type": "string"
+        },
+        {
+          "allowEmpty": false,
+          "name": "poi category",
+          "type": "string"
+        },
+        {
+          "allowEmpty": false,
+          "name": "poi name",
+          "type": "string"
+        },
+        {
+          "allowEmpty": true,
+          "name": "phone number",
+          "pattern": "^\\+?[0-9 \\-/()]{3",
+          "type": "string"
+        },
+        {
+          "allowEmpty": false,
+          "name": "open 24 hours",
+          "type": "boolean"
+        },
+        {
+          "allowEmpty": false,
+          "name": "parent/child poi",
+          "type": "string"
+        },
+        {
+          "allowEmpty": false,
+          "name": "tollway",
+          "type": "string"
+        },
+        {
+          "allowEmpty": false,
+          "name": "private",
+          "type": "string"
+        },
+        {
+          "allowEmpty": false,
+          "name": "public_access",
+          "type": "string"
+        }
+      ],
+      "synonyms": {
+        "lat": "Latitude / Longitude",
+        "latitude": "Latitude / Longitude",
+        "link id": "Link ID",
+        "linkid": "Link ID",
+        "lon": "Latitude / Longitude",
+        "longitude": "Latitude / Longitude",
+        "oneway": "One-Way",
+        "phone": "Phone Number",
+        "postal code": "Postal Code",
+        "postcode": "Postal Code"
+      }
+    }
+  },
   "log": {
     "configPath": "config/alerts.local.json",
     "file": "output/navteq-validator.log",
