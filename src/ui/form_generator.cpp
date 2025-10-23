@@ -587,6 +587,10 @@ json FormGenerator::getFormData() const
                         {
                             nested_obj[nested_field_name.toStdString()] = path_widget->text().toStdString();
                         }
+                        else if (auto* combo_box = qobject_cast<QComboBox*>(fw.widget))
+                        {
+                            nested_obj[nested_field_name.toStdString()] = combo_box->currentText().toStdString();
+                        }
                         else if (auto* spin_box = qobject_cast<QSpinBox*>(fw.widget))
                         {
                             nested_obj[nested_field_name.toStdString()] = spin_box->value();
@@ -598,6 +602,22 @@ json FormGenerator::getFormData() const
                         else if (auto* check_box = qobject_cast<QCheckBox*>(fw.widget))
                         {
                             nested_obj[nested_field_name.toStdString()] = check_box->isChecked();
+                        }
+                        else if (auto* array_widget = qobject_cast<ArrayWidget*>(fw.widget))
+                        {
+                            nested_obj[nested_field_name.toStdString()] = array_widget->getValues();
+                        }
+                        else if (auto* range_widget = qobject_cast<RangeWidget*>(fw.widget))
+                        {
+                            nested_obj[nested_field_name.toStdString()] = range_widget->getValues();
+                        }
+                        else if (auto* dict_widget = qobject_cast<DictionaryWidget*>(fw.widget))
+                        {
+                            nested_obj[nested_field_name.toStdString()] = dict_widget->getValues();
+                        }
+                        else if (auto* obj_array_widget = qobject_cast<ObjectArrayWidget*>(fw.widget))
+                        {
+                            nested_obj[nested_field_name.toStdString()] = obj_array_widget->getValues();
                         }
                     }
                 }
@@ -619,6 +639,10 @@ json FormGenerator::getFormData() const
                     {
                         data[section_name.toStdString()] = path_widget->text().toStdString();
                     }
+                    else if (auto* combo_box = qobject_cast<QComboBox*>(fw.widget))
+                    {
+                        data[section_name.toStdString()] = combo_box->currentText().toStdString();
+                    }
                     else if (auto* spin_box = qobject_cast<QSpinBox*>(fw.widget))
                     {
                         data[section_name.toStdString()] = spin_box->value();
@@ -630,6 +654,22 @@ json FormGenerator::getFormData() const
                     else if (auto* check_box = qobject_cast<QCheckBox*>(fw.widget))
                     {
                         data[section_name.toStdString()] = check_box->isChecked();
+                    }
+                    else if (auto* array_widget = qobject_cast<ArrayWidget*>(fw.widget))
+                    {
+                        data[section_name.toStdString()] = array_widget->getValues();
+                    }
+                    else if (auto* range_widget = qobject_cast<RangeWidget*>(fw.widget))
+                    {
+                        data[section_name.toStdString()] = range_widget->getValues();
+                    }
+                    else if (auto* dict_widget = qobject_cast<DictionaryWidget*>(fw.widget))
+                    {
+                        data[section_name.toStdString()] = dict_widget->getValues();
+                    }
+                    else if (auto* obj_array_widget = qobject_cast<ObjectArrayWidget*>(fw.widget))
+                    {
+                        data[section_name.toStdString()] = obj_array_widget->getValues();
                     }
                 }
             }
@@ -651,6 +691,10 @@ json FormGenerator::getFormData() const
             {
                 data[field_name.toStdString()] = path_widget->text().toStdString();
             }
+            else if (auto* combo_box = qobject_cast<QComboBox*>(fw.widget))
+            {
+                data[field_name.toStdString()] = combo_box->currentText().toStdString();
+            }
             else if (auto* spin_box = qobject_cast<QSpinBox*>(fw.widget))
             {
                 data[field_name.toStdString()] = spin_box->value();
@@ -662,6 +706,22 @@ json FormGenerator::getFormData() const
             else if (auto* check_box = qobject_cast<QCheckBox*>(fw.widget))
             {
                 data[field_name.toStdString()] = check_box->isChecked();
+            }
+            else if (auto* array_widget = qobject_cast<ArrayWidget*>(fw.widget))
+            {
+                data[field_name.toStdString()] = array_widget->getValues();
+            }
+            else if (auto* range_widget = qobject_cast<RangeWidget*>(fw.widget))
+            {
+                data[field_name.toStdString()] = range_widget->getValues();
+            }
+            else if (auto* dict_widget = qobject_cast<DictionaryWidget*>(fw.widget))
+            {
+                data[field_name.toStdString()] = dict_widget->getValues();
+            }
+            else if (auto* obj_array_widget = qobject_cast<ObjectArrayWidget*>(fw.widget))
+            {
+                data[field_name.toStdString()] = obj_array_widget->getValues();
             }
         }
     }
@@ -722,6 +782,18 @@ void FormGenerator::updateFieldValue(const QString& field_name, const json& valu
             path_widget->setText(QString::fromStdString(value.get<std::string>()));
         }
     }
+    else if (auto* combo_box = qobject_cast<QComboBox*>(fw.widget))
+    {
+        if (value.is_string())
+        {
+            const QString text = QString::fromStdString(value.get<std::string>());
+            int idx = combo_box->findText(text);
+            if (idx >= 0)
+            {
+                combo_box->setCurrentIndex(idx);
+            }
+        }
+    }
     else if (auto* spin_box = qobject_cast<QSpinBox*>(fw.widget))
     {
         if (value.is_number_integer())
@@ -741,6 +813,34 @@ void FormGenerator::updateFieldValue(const QString& field_name, const json& valu
         if (value.is_boolean())
         {
             check_box->setChecked(value.get<bool>());
+        }
+    }
+    else if (auto* array_widget = qobject_cast<ArrayWidget*>(fw.widget))
+    {
+        if (value.is_array())
+        {
+            array_widget->setValues(value);
+        }
+    }
+    else if (auto* range_widget = qobject_cast<RangeWidget*>(fw.widget))
+    {
+        if (value.is_array())
+        {
+            range_widget->setValues(value);
+        }
+    }
+    else if (auto* dict_widget = qobject_cast<DictionaryWidget*>(fw.widget))
+    {
+        if (value.is_object())
+        {
+            dict_widget->setValues(value);
+        }
+    }
+    else if (auto* obj_array_widget = qobject_cast<ObjectArrayWidget*>(fw.widget))
+    {
+        if (value.is_array())
+        {
+            obj_array_widget->setValues(value);
         }
     }
 }

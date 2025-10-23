@@ -359,23 +359,46 @@ json ObjectArrayWidget::getValues() const
     for (int i = 0; i < items_layout_->count(); ++i)
     {
         auto* item_widget = items_layout_->itemAt(i)->widget();
-        if (!item_widget) continue;
+        if (!item_widget) { continue; }
 
-        // Find all QLineEdit widgets in this item and collect their values
+        // If this is a RuleEditorWidget-based item, extract via RuleEditorWidget
+        RuleEditorWidget* rule_editor = item_widget->findChild<RuleEditorWidget*>();
+        if (rule_editor != nullptr)
+        {
+            RuleDefinition rule = rule_editor->getRule();
+
+            // Convert RuleDefinition to old verbose rule object
+            json obj = json::object();
+            obj["name"] = rule.name;
+            obj["type"] = rule.type;
+            obj["allowEmpty"] = rule.allow_empty;
+            if (!rule.pattern.empty()) { obj["pattern"] = rule.pattern; }
+            if (!rule.enum_values.empty()) { obj["enum"] = rule.enum_values; }
+
+            if (rule.type == "integer" || rule.type == "float")
+            {
+                // Avoid direct float equality: only emit when set away from sentinel values
+                if (std::fabs(rule.minimum - std::numeric_limits<double>::lowest()) > 1e-9) { obj["minimum"] = rule.minimum; }
+                if (std::fabs(rule.maximum - std::numeric_limits<double>::max()) > 1e-9) { obj["maximum"] = rule.maximum; }
+            }
+
+            result.push_back(obj);
+            continue;
+        }
+
+        // Fallback: generic scan for basic controls inside the item's form
         json obj = json::object();
-        
-        // Get field names from schema
-        if (schema_.contains("items") && schema_["items"].contains("properties"))
+        const bool has_props = schema_.contains("items") && schema_["items"].contains("properties");
+        if (has_props)
         {
             const auto& properties = schema_["items"]["properties"];
             for (auto it = properties.begin(); it != properties.end(); ++it)
             {
-                // For now, extract from form - simplified version
-                // In a real implementation, would need to find and extract from specific widgets
-                obj[it.key()] = "";
+                const std::string& key = it.key();
+                // Try to find a QLineEdit with matching label order; as a simple fallback, leave empty
+                obj[key] = "";
             }
         }
-
         result.push_back(obj);
     }
 

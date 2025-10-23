@@ -1,0 +1,157 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "./config.schema.json",
+  "log": {
+    "level": "info",
+    "file": "output/navteq-validator.log",
+    "configPath": "/tmp/pxpoint-configs/log-services/cpp/logging-development.json"
+  },
+  
+  "autoRules": {
+    "rdf": [
+      "RdfIntegrityRule",
+      "DataTypeValidationRule",
+      "LinksTableRule",
+      "LinksGeometryRule",
+      "PoiTableRule",
+      "BuildingTableRule",
+      "GeometryEquivalenceRule"
+    ],
+    "shapefiles": [
+      "ShapefileCompletenessRule",
+      "ShapefilePrjRule",
+      "GeometryEquivalenceRule"
+    ],
+    "3d-landmarks": [
+      "3DFileCompletenessRule",
+      "ObjMtlReferenceRule"
+    ],
+    "default": [
+      "3DFileCompletenessRule"
+    ]
+  },
+  "rootRules": ["RootStructureRule"],
+  "parallelism": 4,
+  "parallelismByMode": {
+    "auto": 4,
+    "rdf": 3,
+    "3d-landmarks": 2
+  },
+  "maxTasksInFlight": 8,
+  "report": {
+    "json": "output/report.json",
+    "csv": "output/report.csv"
+  },
+  "alerts": {
+    "enabled": true,
+    "configPath": "config/alerts.local.json"
+  },
+  "configureRules": {
+    "GeometryEquivalenceRule": {
+      "fieldName": "LINK_ID",
+      "tolerance": 1e-6
+    },
+    "ShapefilePrjRule": {
+      "acceptedTokens": ["WGS 84", "WGS84", "WGS_1984", "WGS-84", "EPSG:4326", "4326"]
+    },
+    "3DFileCompletenessRule": {
+      "requiredSuffixes": ["_L.OBJ", "_L.MTL", "_S.OBJ", "_S.MTL", "_ICON.TGA"],
+      "searchRecursively": true
+    },
+
+    "ShapefileCompletenessRule": {
+      "requiredComponents": [".shx", ".dbf"],
+      "caseSensitive": false
+    },
+    "ObjMtlReferenceRule": {
+      "expectedMtlExtension": ".MTL",
+      "caseSensitive": false,
+      "allowMissingMtllib": false
+    },
+    "BuildingTableRule": {
+      "require_sdo_or_wkt": true,
+      "expectedHeaders": [
+        "BUILDING_ID","BUILDING_TYPE","HEIGHT","SDO","WKT","LAT","LON"
+      ]
+    },
+    "LinksGeometryRule": {
+      "require_sdo_or_wkt": true,
+      "expectedHeaders": [
+        "LINK_ID","SDO","WKT"
+      ]
+    },
+    "PoiTableRule": {
+      "latitude_range": [-90.0, 90.0],
+      "longitude_range": [-180.0, 180.0],
+      "expectedHeaders": [
+        "POI_ID","POI_TYPE","LAT","LON"
+      ]
+    },
+    "RdfIntegrityRule": {
+      "check_building_3d_subfolders": true
+    },
+    "RootStructureRule": {
+      "expected_children": ["*_3DLandmarks", "*_RDF", "*_Shapefiles"]
+    },
+    "dataTypeValidationRule": {
+      "synonyms": {
+        "link id": "Link ID",
+        "linkid": "Link ID",
+        "latitude": "Latitude / Longitude",
+        "longitude": "Latitude / Longitude",
+        "lat": "Latitude / Longitude",
+        "lon": "Latitude / Longitude",
+        "oneway": "One-Way",
+        "postal code": "Postal Code",
+        "postcode": "Postal Code",
+        "phone": "Phone Number"
+      },
+      "rules": {
+        "type": "string?",
+        "link id": "integer[0,]+",
+        "latitude": "float[-90,90]",
+        "longitude": "float[-180,180]",
+        "node type": { "type": "string", "allowEmpty": false, "enum": ["intersection","termination of a link","change of attribution"] },
+        "shape point": "string?",
+        "z-level": "string?",
+        "aligned": "boolean",
+        "street name": "string?",
+        "address range": "string?",
+        "address scheme": { "type": "string", "allowEmpty": true, "enum": ["Even","Odd","Mixed"] },
+        "one-way": "boolean",
+        "access characteristics": "string?",
+        "functional class": "integer[1,5]",
+        "language code": "string?",
+        "country": "string?",
+        "postal code": "string?",
+        "cartography feature": { "type": "string", "allowEmpty": false },
+        "polygon formation": { "type": "string", "allowEmpty": false },
+        "poi category": { "type": "string", "allowEmpty": false },
+        "poi name": "string?",
+        "phone number": { "type": "string", "allowEmpty": true, "pattern": "^\\+?[0-9 \\-/()]{3,}$" },
+        "open 24 hours": "boolean?",
+        "parent/child poi": "string?",
+        "tollway": "string?",
+        "private": "string?",
+        "public_access": "string?"
+      }
+    },
+    "LinksTableRule": {
+      "check_private": false,
+      "check_tollway": false,
+      "check_public_access": false,
+      "#notes": "If you want DataTypeValidationRule to handle these fields, set the corresponding check_* to false.",
+      "boolean_tokens": [
+        "true",
+        "false",
+        "1",
+        "0",
+        "yes",
+        "no"
+      ],
+      "expectedHeaders": [
+        "LINK_ID","ACCESS_ID","FUNCTIONAL_CLASS","TRAVEL_DIRECTION","PRIVATE","TOLLWAY","FROM_SPEED_LIMIT","TO_SPEED_LIMIT","PUBLIC_ACCESS"
+      ]
+    }
+  }
+}
