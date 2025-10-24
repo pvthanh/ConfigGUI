@@ -1,0 +1,558 @@
+openapi: 3.0.0
+info:
+  title: ConfigGUI HTML Server API
+  description: REST API for HTML-based configuration form generation from JSON/YAML schemas
+  version: 1.0.0
+  contact:
+    name: ConfigGUI Project
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+
+tags:
+  - name: Schema
+    description: Schema loading and management
+  - name: Form
+    description: Form generation and validation
+  - name: Configuration
+    description: Configuration data save/load
+
+paths:
+  /:
+    get:
+      tags:
+        - Schema
+      summary: Get main form (schema selection)
+      description: |
+        Returns the main HTML form for schema selection.
+        This is the entry point for the application.
+      operationId: getMainForm
+      responses:
+        '200':
+          description: Main form HTML with schema selector
+          content:
+            text/html:
+              schema:
+                type: string
+              example: '<html><body><form>...</form></body></html>'
+
+  /api/schemas:
+    get:
+      tags:
+        - Schema
+      summary: List available schemas
+      description: |
+        Returns list of available schema files in the schemas directory.
+        Each schema can be selected to generate a corresponding form.
+      operationId: listSchemas
+      responses:
+        '200':
+          description: List of available schemas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      description: Schema identifier (filename without extension)
+                      example: app_config
+                    title:
+                      type: string
+                      description: Schema title from metadata
+                      example: Application Configuration
+                    description:
+                      type: string
+                      description: Schema description
+                      example: Main application settings
+                    version:
+                      type: string
+                      description: Schema version if specified
+                      example: "1.0.0"
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/schema/{schema_id}/load:
+    post:
+      tags:
+        - Schema
+      summary: Load and parse schema
+      description: |
+        Loads a JSON or YAML schema file and returns its structure
+        for form generation. Validates schema compliance with JSON Schema standard.
+      operationId: loadSchema
+      parameters:
+        - name: schema_id
+          in: path
+          required: true
+          description: Schema identifier (filename without extension)
+          schema:
+            type: string
+            example: app_config
+      responses:
+        '200':
+          description: Parsed schema ready for form generation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SchemaResponse'
+        '400':
+          description: Invalid schema ID or malformed schema file
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Schema file not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/form/generate:
+    post:
+      tags:
+        - Form
+      summary: Generate HTML form from schema
+      description: |
+        Generates an HTML form structure from a loaded schema.
+        Returns form fields with validation rules and UI hints.
+      operationId: generateForm
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                schema_id:
+                  type: string
+                  description: Schema identifier
+                  example: app_config
+                properties:
+                  type: array
+                  description: Schema properties (from /api/schema/{id}/load response)
+              required:
+                - schema_id
+      responses:
+        '200':
+          description: Generated form HTML
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  form_html:
+                    type: string
+                    description: HTML form element with all fields
+                  schema_title:
+                    type: string
+                  fields:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FormField'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/validate:
+    post:
+      tags:
+        - Form
+      summary: Validate single field
+      description: |
+        Validates a single field value against its schema rules.
+        Used for real-time validation feedback as user edits.
+      operationId: validateField
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                field_name:
+                  type: string
+                  description: Field path (e.g., "database.host" for nested)
+                  example: port
+                field_path:
+                  type: string
+                  description: Dot-notation path for nested objects
+                  example: database.connection.port
+                value:
+                  description: Value to validate (any JSON type)
+                  example: 8080
+                schema_id:
+                  type: string
+                  description: Schema context
+                  example: app_config
+              required:
+                - field_name
+                - value
+      responses:
+        '200':
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:
+                    type: boolean
+                    example: true
+                  errors:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ValidationError'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/config/save:
+    post:
+      tags:
+        - Configuration
+      summary: Save configuration
+      description: |
+        Saves user-filled configuration data.
+        Validates entire configuration against schema before saving.
+        Returns success or detailed validation errors.
+      operationId: saveConfiguration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                schema_id:
+                  type: string
+                  description: Associated schema
+                  example: app_config
+                data:
+                  type: object
+                  description: Configuration data (keys match schema properties)
+                  example:
+                    app_name: MyApp
+                    port: 8080
+                format:
+                  type: string
+                  enum: [json, yaml]
+                  default: json
+                  description: Export format
+              required:
+                - schema_id
+                - data
+      responses:
+        '200':
+          description: Configuration saved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Configuration saved successfully
+                  config_path:
+                    type: string
+                    description: Path where config was saved
+                    example: /configs/app_config.json
+        '400':
+          description: Validation errors in configuration
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Validation failed
+                  errors:
+                    type: array
+                    description: List of validation errors for each field
+                    items:
+                      $ref: '#/components/schemas/ValidationError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/config/load:
+    get:
+      tags:
+        - Configuration
+      summary: Load configuration
+      description: |
+        Loads an existing configuration file (JSON or YAML).
+        Returns the configuration data mapped to form fields.
+      operationId: loadConfiguration
+      parameters:
+        - name: config_id
+          in: query
+          description: Configuration identifier or file path
+          schema:
+            type: string
+            example: app_config_prod
+      responses:
+        '200':
+          description: Configuration loaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfigurationResponse'
+        '404':
+          description: Configuration file not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/form/validate:
+    post:
+      tags:
+        - Form
+      summary: Validate entire form
+      description: |
+        Validates all form fields against the schema.
+        Used before save to identify all errors at once.
+      operationId: validateForm
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                schema_id:
+                  type: string
+                  example: app_config
+                data:
+                  type: object
+                  description: Complete form data
+              required:
+                - schema_id
+                - data
+      responses:
+        '200':
+          description: Form validation result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:
+                    type: boolean
+                    example: false
+                  errors:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ValidationError'
+                  field_count:
+                    type: integer
+                    example: 5
+                  error_count:
+                    type: integer
+                    example: 2
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  schemas:
+    SchemaResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          example: app_config
+        title:
+          type: string
+          example: Application Configuration
+        description:
+          type: string
+          example: Main application settings
+        properties:
+          type: array
+          items:
+            $ref: '#/components/schemas/Property'
+        required_fields:
+          type: array
+          items:
+            type: string
+          example: [app_name, port]
+
+    Property:
+      type: object
+      properties:
+        name:
+          type: string
+          example: database_url
+        title:
+          type: string
+          example: Database URL
+        description:
+          type: string
+          example: PostgreSQL connection string
+        type:
+          type: string
+          enum: [string, number, integer, boolean, object, array]
+          example: string
+        required:
+          type: boolean
+          example: true
+        default_value:
+          description: Default value for this field
+        rules:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidationRule'
+        nested_properties:
+          type: array
+          items:
+            $ref: '#/components/schemas/Property'
+          description: For object type properties
+        ui_hints:
+          type: object
+          additionalProperties: true
+          description: x-* custom UI hints from schema
+          example:
+            x-placeholder: postgresql://user:pass@localhost/db
+            x-component: textarea
+
+    ValidationRule:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [required, pattern, minLength, maxLength, minimum, maximum, enum, minItems, maxItems, const]
+          example: pattern
+        constraint:
+          description: Rule constraint value (regex, number, array, etc.)
+          example: ^[a-z]+$
+        error_message:
+          type: string
+          example: Only lowercase letters allowed
+
+    FormField:
+      type: object
+      properties:
+        id:
+          type: string
+          example: field_app_name
+        name:
+          type: string
+          example: app_name
+        label:
+          type: string
+          example: Application Name
+        type:
+          type: string
+          enum: [text, number, email, password, checkbox, select, textarea, date, time]
+          example: text
+        required:
+          type: boolean
+          example: true
+        placeholder:
+          type: string
+          example: Enter application name
+        options:
+          type: array
+          items:
+            type: object
+            properties:
+              value:
+                type: string
+              label:
+                type: string
+          description: For select/radio fields (from enum rule)
+        validation_rules:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidationRule'
+
+    ValidationError:
+      type: object
+      properties:
+        field_name:
+          type: string
+          example: port
+        rule_type:
+          type: string
+          example: minimum
+        message:
+          type: string
+          example: Port must be >= 1024
+        attempted_value:
+          description: The value that failed validation
+          example: 500
+
+    ConfigurationResponse:
+      type: object
+      properties:
+        schema_id:
+          type: string
+          example: app_config
+        data:
+          type: object
+          description: Configuration values
+          example:
+            app_name: MyApp
+            port: 8080
+        config_path:
+          type: string
+          example: /configs/app_config.json
+        timestamp:
+          type: string
+          format: date-time
+          description: Last modified timestamp
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: Schema file not found
+        error_code:
+          type: string
+          example: SCHEMA_NOT_FOUND
+        details:
+          type: string
+          example: Schema 'invalid_id' not found in schemas directory
+
+  responses:
+    BadRequest:
+      description: Bad request - invalid parameters or malformed request body
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  securitySchemes:
+    basic:
+      type: http
+      scheme: basic
+      description: Basic HTTP authentication (optional for MVP)

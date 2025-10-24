@@ -11,19 +11,34 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Qt Configuration
-set(CMAKE_AUTOMOC ON)
-set(CMAKE_AUTORCC ON)
-set(CMAKE_AUTOUIC ON)
+# Build Options - Dual-Target Support (T001)
+option(BUILD_QT_APP "Build Qt application" ON)
+option(BUILD_HTML_SERVER "Build HTML server application" OFF)
 
-# Find Qt6
-find_package(Qt6 COMPONENTS 
-    Core 
-    Gui 
-    Widgets 
-    Test
-    REQUIRED
-)
+if(NOT BUILD_QT_APP AND NOT BUILD_HTML_SERVER)
+    message(FATAL_ERROR "At least one of BUILD_QT_APP or BUILD_HTML_SERVER must be ON")
+endif()
+
+# Qt Configuration (only needed if building Qt app)
+if(BUILD_QT_APP)
+    set(CMAKE_AUTOMOC ON)
+    set(CMAKE_AUTORCC ON)
+    set(CMAKE_AUTOUIC ON)
+endif()
+
+# CMake FetchContent for external dependencies
+include(FetchContent)
+
+# Find Qt6 (only required if building Qt app)
+if(BUILD_QT_APP)
+    find_package(Qt6 COMPONENTS 
+        Core 
+        Gui 
+        Widgets 
+        Test
+        REQUIRED
+    )
+endif()
 
 # Find nlohmann_json
 find_package(nlohmann_json 3.11 REQUIRED)
@@ -34,165 +49,43 @@ find_package(nlohmann_json_schema_validator REQUIRED)
 # Find yaml-cpp
 find_package(yaml-cpp REQUIRED)
 
+# Fetch cpp-httplib (header-only, C++17)
+# Only used by HTML server build (Phase 3)
+FetchContent_Declare(cpp-httplib
+    GIT_REPOSITORY https://github.com/yhirose/cpp-httplib.git
+    GIT_TAG v0.11.0
+)
+
 # Include directories
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 
-# Source files
-set(CORE_SOURCES
-    src/core/schema.h
-    src/core/schema.cpp
-    src/core/configuration_data.h
-    src/core/configuration_data.cpp
-    src/core/validation_error.h
-    src/core/validation_error.cpp
-    src/core/form_state.h
-    src/core/form_state.cpp
-    src/core/result.h
-    src/core/error_types.h
-    src/core/schema_loader.h
-    src/core/schema_loader.cpp
-    src/core/schema_validator.h
-    src/core/schema_validator.cpp
-)
-
-set(UI_SOURCES
-    src/ui/main_window.h
-    src/ui/main_window.cpp
-    src/ui/widget_factory.h
-    src/ui/widget_factory.cpp
-    src/ui/form_generator.h
-    src/ui/form_generator.cpp
-    src/ui/array_widget.h
-    src/ui/array_widget.cpp
-    src/ui/range_widget.h
-    src/ui/range_widget.cpp
-    src/ui/dictionary_widget.h
-    src/ui/dictionary_widget.cpp
-    src/ui/object_array_widget.h
-    src/ui/object_array_widget.cpp
-    src/ui/path_selector_widget.h
-    src/ui/path_selector_widget.cpp
-    src/ui/rule_parser.h
-    src/ui/rule_parser.cpp
-    src/ui/rule_editor_widget.h
-    src/ui/rule_editor_widget.cpp
-    src/ui/validation_feedback_widget.h
-    src/ui/validation_feedback_widget.cpp
-)
-
-set(VALIDATOR_SOURCES
-    src/validators/ivalidator.h
-    src/validators/required_validator.h
-    src/validators/required_validator.cpp
-    src/validators/type_validator.h
-    src/validators/type_validator.cpp
-    src/validators/range_validator.h
-    src/validators/range_validator.cpp
-    src/validators/pattern_validator.h
-    src/validators/pattern_validator.cpp
-    src/validators/enum_validator.h
-    src/validators/enum_validator.cpp
-)
-
-set(IO_SOURCES
-    src/io/json_reader.h
-    src/io/json_reader.cpp
-    src/io/json_writer.h
-    src/io/json_writer.cpp
-    src/io/yaml_reader.h
-    src/io/yaml_reader.cpp
-    src/io/yaml_writer.h
-    src/io/yaml_writer.cpp
-)
-
-set(UTILS_SOURCES
-    src/utils/logger.h
-    src/utils/logger.cpp
-    src/utils/string_utils.h
-    src/utils/string_utils.cpp
-    src/utils/file_utils.h
-    src/utils/file_utils.cpp
-    src/utils/crash_handler.h
-    src/utils/crash_handler.cpp
-)
-
-# Main application executable
-add_executable(ConfigGUI
-    src/main.cpp
-    ${CORE_SOURCES}
-    ${UI_SOURCES}
-    ${VALIDATOR_SOURCES}
-    ${IO_SOURCES}
-    ${UTILS_SOURCES}
-)
-
-# Link libraries
-target_link_libraries(ConfigGUI
-    Qt6::Core
-    Qt6::Gui
-    Qt6::Widgets
-    nlohmann_json::nlohmann_json
-    nlohmann_json_schema_validator
-    yaml-cpp
-)
-
-# MISRA C++ Compiler Flags
-if(MSVC)
-    target_compile_options(ConfigGUI PRIVATE /W4 /WX)
-else()
-    target_compile_options(ConfigGUI PRIVATE 
-        -Wall 
-        -Wextra 
-        -Werror 
-        -Wconversion 
-        -Wsign-conversion 
-        -Wnon-virtual-dtor
-        -Wold-style-cast
-        -Woverloaded-virtual
-        -Wpedantic
-        -Wfloat-equal
-        -Wredundant-decls
-        -Wdouble-promotion
-    )
+# Fetch cpp-httplib content (for HTML server module)
+if(BUILD_HTML_SERVER)
+    FetchContent_MakeAvailable(cpp-httplib)
 endif()
+
+# Add source subdirectories (modular organization)
+add_subdirectory(src)
+
+# Main application executable (Qt-only)
+# (Defined in src/qt/CMakeLists.txt)
+
+# MISRA C++ Compiler Flags (for Qt app if built)
+# (Defined in src/core/CMakeLists.txt and src/qt/CMakeLists.txt)
 
 # Enable testing
 enable_testing()
 
-# Unit Tests
-file(GLOB_RECURSE UNIT_TEST_SOURCES "tests/unit/*.cpp")
-if(UNIT_TEST_SOURCES)
-    add_executable(test_unit ${UNIT_TEST_SOURCES} ${CORE_SOURCES} ${VALIDATOR_SOURCES} ${IO_SOURCES} ${UTILS_SOURCES})
-    target_link_libraries(test_unit
-        Qt6::Core
-        Qt6::Test
-        nlohmann_json::nlohmann_json
-        nlohmann_json_schema_validator
-        yaml-cpp
-    )
-    add_test(NAME UnitTests COMMAND test_unit)
-endif()
+# Unit Tests (Qt-specific)
+# (Defined in src/qt/CMakeLists.txt if BUILD_QT_APP is ON)
 
-# Integration Tests
-file(GLOB_RECURSE INTEGRATION_TEST_SOURCES "tests/integration/*.cpp")
-if(INTEGRATION_TEST_SOURCES)
-    add_executable(test_integration ${INTEGRATION_TEST_SOURCES} ${CORE_SOURCES} ${UI_SOURCES} ${VALIDATOR_SOURCES} ${IO_SOURCES} ${UTILS_SOURCES})
-    target_link_libraries(test_integration
-        Qt6::Core
-        Qt6::Gui
-        Qt6::Widgets
-        Qt6::Test
-        nlohmann_json::nlohmann_json
-        nlohmann_json_schema_validator
-        yaml-cpp
-    )
-    add_test(NAME IntegrationTests COMMAND test_integration)
-endif()
+# Integration Tests (Qt-specific)
+# (Defined in src/qt/CMakeLists.txt if BUILD_QT_APP is ON)
 
 # clang-tidy target
 if(CMAKE_CXX_CLANG_TIDY)
     add_custom_target(clang-tidy
-        COMMAND clang-tidy ${CORE_SOURCES} ${UI_SOURCES} ${VALIDATOR_SOURCES} ${IO_SOURCES} ${UTILS_SOURCES}
+        COMMAND clang-tidy src/**/*.cpp
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     )
 endif()
@@ -200,5 +93,9 @@ endif()
 # Print configuration
 message(STATUS "ConfigGUI Configuration:")
 message(STATUS "  C++ Standard: ${CMAKE_CXX_STANDARD}")
-message(STATUS "  Qt Version: ${Qt6_VERSION}")
+message(STATUS "  Build Qt App: ${BUILD_QT_APP}")
+message(STATUS "  Build HTML Server: ${BUILD_HTML_SERVER}")
+if(BUILD_QT_APP)
+    message(STATUS "  Qt Version: ${Qt6_VERSION}")
+endif()
 message(STATUS "  Build Type: ${CMAKE_BUILD_TYPE}")
