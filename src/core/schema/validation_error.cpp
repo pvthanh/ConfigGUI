@@ -6,8 +6,8 @@
 namespace configgui {
 namespace core {
 
-ValidationError::ValidationError(const QString& field, ValidationErrorType type, const QString& message,
-                                 const QString& suggestion)
+ValidationError::ValidationError(const std::string& field, ValidationErrorType type, const std::string& message,
+                                 const std::string& suggestion)
     : field_(field)
     , type_(type)
     , message_(message)
@@ -39,8 +39,8 @@ int ValidationError::severity() const
 
 std::string ValidationError::to_string() const
 {
-    std::string result = "ValidationError{field='" + field_.toStdString() + "', type=" + ::configgui::core::to_string(type_) +
-                         ", message='" + message_.toStdString() + "'}";
+    std::string result = "ValidationError{field='" + field_ + "', type=" + ::configgui::core::to_string(type_) +
+                         ", message='" + message_ + "'}";
     return result;
 }
 

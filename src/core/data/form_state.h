@@ -4,7 +4,7 @@
 #pragma once
 
 #include "configuration_data.h"
-#include <QString>
+#include <string>
 #include <map>
 
 namespace configgui {
@@ -44,10 +44,10 @@ public:
     void set_active_tab(int index) { active_tab_index_ = index; }
 
     /// @brief Get field with focus
-    [[nodiscard]] const QString& focused_field() const { return focused_field_; }
+    [[nodiscard]] const std::string& focused_field() const { return focused_field_; }
 
     /// @brief Set field with focus
-    void set_focused_field(const QString& field) { focused_field_ = field; }
+    void set_focused_field(const std::string& field) { focused_field_ = field; }
 
     /// @brief Check if form is loading data
     [[nodiscard]] bool is_loading() const { return is_loading_; }
@@ -71,7 +71,7 @@ private:
     bool has_unsaved_changes_ = false;
     int scroll_position_ = 0;
     int active_tab_index_ = 0;
-    QString focused_field_;
+    std::string focused_field_;
     bool is_loading_ = false;
 };
 

@@ -5,7 +5,7 @@
 
 #include <memory>
 #include <nlohmann/json.hpp>
-#include <QString>
+#include <string>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -37,16 +37,16 @@ public:
     [[nodiscard]] const json& raw_schema() const { return schema_; }
 
     /// @brief Get the title of the schema
-    [[nodiscard]] QString title() const;
+    [[nodiscard]] std::string title() const;
 
     /// @brief Get the description of the schema
-    [[nodiscard]] QString description() const;
+    [[nodiscard]] std::string description() const;
 
     /// @brief Check if schema is valid (Draft 7)
     [[nodiscard]] bool is_valid() const { return validator_ != nullptr; }
 
     /// @brief Get all required fields
-    [[nodiscard]] std::vector<QString> required_fields() const;
+    [[nodiscard]] std::vector<std::string> required_fields() const;
 
     /// @brief Get properties in schema
     [[nodiscard]] const json& properties() const;

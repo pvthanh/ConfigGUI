@@ -3,35 +3,32 @@
 
 #include "schema_loader.h"
 #include <fstream>
-#include <QFile>
+#include <sstream>
 #include <iostream>
 
 namespace configgui {
 namespace core {
 
-Result<JSONSchema, FileError> SchemaLoader::loadSchema(const QString& file_path)
+Result<JSONSchema, FileError> SchemaLoader::loadSchema(const std::string& file_path)
 {
-    QFile file(file_path);
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+    std::ifstream file(file_path);
+    if (!file.is_open())
     {
-        if (file.error() == QFile::NoError)
-        {
-            return Result<JSONSchema, FileError>(FileError::NotFound);
-        }
-        return Result<JSONSchema, FileError>(FileError::PermissionDenied);
+        return Result<JSONSchema, FileError>(FileError::NotFound);
     }
 
-    const QByteArray content = file.readAll();
+    std::stringstream buffer;
+    buffer << file.rdbuf();
     file.close();
 
-    return loadSchemaFromString(QString::fromUtf8(content));
+    return loadSchemaFromString(buffer.str());
 }
 
-Result<JSONSchema, FileError> SchemaLoader::loadSchemaFromString(const QString& json_string)
+Result<JSONSchema, FileError> SchemaLoader::loadSchemaFromString(const std::string& json_string)
 {
     try
     {
-        const json schema_json = json::parse(json_string.toStdString());
+        const json schema_json = json::parse(json_string);
 
         if (!validateJson(schema_json))
         {

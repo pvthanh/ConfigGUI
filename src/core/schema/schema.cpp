@@ -2,7 +2,6 @@
 // JSONSchema - Implementation
 
 #include "schema.h"
-#include <QString>
 #include <vector>
 
 namespace configgui {
@@ -39,27 +38,27 @@ void JSONSchema::buildIndex()
     }
 }
 
-QString JSONSchema::title() const
+std::string JSONSchema::title() const
 {
     if (schema_.contains("title"))
     {
-        return QString::fromStdString(schema_["title"].get<std::string>());
+        return schema_["title"].get<std::string>();
     }
     return "";
 }
 
-QString JSONSchema::description() const
+std::string JSONSchema::description() const
 {
     if (schema_.contains("description"))
     {
-        return QString::fromStdString(schema_["description"].get<std::string>());
+        return schema_["description"].get<std::string>();
     }
     return "";
 }
 
-std::vector<QString> JSONSchema::required_fields() const
+std::vector<std::string> JSONSchema::required_fields() const
 {
-    std::vector<QString> required;
+    std::vector<std::string> required;
     if (schema_.contains("required"))
     {
         const auto& req = schema_["required"];
@@ -69,7 +68,7 @@ std::vector<QString> JSONSchema::required_fields() const
             {
                 if (field.is_string())
                 {
-                    required.push_back(QString::fromStdString(field.get<std::string>()));
+                    required.push_back(field.get<std::string>());
                 }
             }
         }

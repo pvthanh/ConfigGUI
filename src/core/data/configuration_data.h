@@ -5,9 +5,8 @@
 
 #include "../schema/validation_error.h"
 #include <nlohmann/json.hpp>
-#include <QVariant>
 #include <map>
-#include <QString>
+#include <string>
 
 using json = nlohmann::ordered_json;
 
@@ -20,7 +19,7 @@ struct FieldState
     bool is_dirty = false;                    ///< User has edited this field
     bool is_focused = false;                  ///< Field currently has focus
     std::vector<ValidationError> errors;      ///< Validation errors for this field
-    QVariant current_value;                   ///< Current user input value
+    json current_value;                       ///< Current user input value
 };
 
 /// @brief Represents configuration data with validation tracking
@@ -40,31 +39,31 @@ public:
     json& data() { return data_; }
 
     /// @brief Get value for a field
-    [[nodiscard]] QVariant get_value(const QString& field_name) const;
+    [[nodiscard]] json get_value(const std::string& field_name) const;
 
     /// @brief Set value for a field (marks as dirty)
-    void set_value(const QString& field_name, const QVariant& value);
+    void set_value(const std::string& field_name, const json& value);
 
     /// @brief Mark field as dirty (edited)
-    void mark_dirty(const QString& field_name);
+    void mark_dirty(const std::string& field_name);
 
     /// @brief Mark field as clean (not edited)
-    void mark_clean(const QString& field_name);
+    void mark_clean(const std::string& field_name);
 
     /// @brief Check if field has been edited
-    [[nodiscard]] bool is_dirty(const QString& field_name) const;
+    [[nodiscard]] bool is_dirty(const std::string& field_name) const;
 
     /// @brief Mark field as focused
-    void set_focused(const QString& field_name, bool focused);
+    void set_focused(const std::string& field_name, bool focused);
 
     /// @brief Add validation error for field
-    void add_error(const QString& field_name, const ValidationError& error);
+    void add_error(const std::string& field_name, const ValidationError& error);
 
     /// @brief Clear errors for field
-    void clear_errors(const QString& field_name);
+    void clear_errors(const std::string& field_name);
 
     /// @brief Get all errors for field
-    [[nodiscard]] const std::vector<ValidationError>& get_errors(const QString& field_name) const;
+    [[nodiscard]] const std::vector<ValidationError>& get_errors(const std::string& field_name) const;
 
     /// @brief Get all validation errors
     [[nodiscard]] ValidationErrors all_errors() const;
@@ -73,7 +72,7 @@ public:
     [[nodiscard]] bool has_errors() const;
 
     /// @brief Check if specific field has errors
-    [[nodiscard]] bool has_errors(const QString& field_name) const;
+    [[nodiscard]] bool has_errors(const std::string& field_name) const;
 
     /// @brief Check if form is dirty (any field edited)
     [[nodiscard]] bool is_dirty() const;
@@ -86,7 +85,7 @@ public:
 
 private:
     json data_;
-    std::map<QString, FieldState> field_states_;
+    std::map<std::string, FieldState> field_states_;
     static const std::vector<ValidationError> empty_errors_;
 };
 

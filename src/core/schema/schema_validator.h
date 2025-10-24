@@ -7,7 +7,7 @@
 #include "schema.h"
 #include "../error_types.h"
 #include "validation_error.h"
-#include <QString>
+#include <string>
 #include <nlohmann/json.hpp>
 #include <nlohmann/json-schema.hpp>
 
@@ -36,7 +36,7 @@ public:
     [[nodiscard]] ValidationErrors validate(const json& data) const;
 
     /// @brief Validate single field against schema
-    [[nodiscard]] ValidationErrors validateField(const QString& field_name, const json& value) const;
+    [[nodiscard]] ValidationErrors validateField(const std::string& field_name, const json& value) const;
 
     /// @brief Get the schema
     [[nodiscard]] const json& schema() const { return schema_; }
@@ -46,8 +46,8 @@ private:
     std::unique_ptr<nlohmann::json_schema::json_validator> validator_;
 
     /// @brief Create ValidationError from schema violation
-    [[nodiscard]] ValidationError createError(const QString& field, ValidationErrorType type,
-                                               const QString& message) const;
+    [[nodiscard]] ValidationError createError(const std::string& field, ValidationErrorType type,
+                                               const std::string& message) const;
 };
 
 } // namespace core

@@ -47,7 +47,7 @@ ValidationErrors SchemaValidator::validate(const json& data) const
     return errors;
 }
 
-ValidationErrors SchemaValidator::validateField(const QString& field_name, const json& value) const
+ValidationErrors SchemaValidator::validateField(const std::string& field_name, const json& value) const
 {
     ValidationErrors errors;
 
@@ -61,19 +61,19 @@ ValidationErrors SchemaValidator::validateField(const QString& field_name, const
     try
     {
         json test_data;
-        test_data[field_name.toStdString()] = value;
+        test_data[field_name] = value;
         validator_->validate(test_data);
     }
     catch (const std::exception& e)
     {
-        errors.push_back(createError(field_name, ValidationErrorType::None, QString::fromStdString(e.what())));
+        errors.push_back(createError(field_name, ValidationErrorType::None, std::string(e.what())));
     }
 
     return errors;
 }
 
-ValidationError SchemaValidator::createError(const QString& field, ValidationErrorType type,
-                                              const QString& message) const
+ValidationError SchemaValidator::createError(const std::string& field, ValidationErrorType type,
+                                              const std::string& message) const
 {
     return ValidationError(field, type, message, "");
 }

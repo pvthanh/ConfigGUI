@@ -6,7 +6,7 @@
 #include "../result.h"
 #include "schema.h"
 #include "../error_types.h"
-#include <QString>
+#include <string>
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::ordered_json;
@@ -28,10 +28,10 @@ public:
     SchemaLoader& operator=(SchemaLoader&&) = delete;
 
     /// @brief Load schema from file path
-    [[nodiscard]] Result<JSONSchema, FileError> loadSchema(const QString& file_path);
+    [[nodiscard]] Result<JSONSchema, FileError> loadSchema(const std::string& file_path);
 
     /// @brief Load schema from JSON string
-    [[nodiscard]] Result<JSONSchema, FileError> loadSchemaFromString(const QString& json_string);
+    [[nodiscard]] Result<JSONSchema, FileError> loadSchemaFromString(const std::string& json_string);
 
 private:
     /// @brief Validate schema is proper JSON

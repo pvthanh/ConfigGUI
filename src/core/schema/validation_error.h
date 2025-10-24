@@ -4,7 +4,6 @@
 #pragma once
 
 #include "../error_types.h"
-#include <QString>
 #include <string>
 #include <vector>
 
@@ -15,20 +14,20 @@ namespace core {
 class ValidationError
 {
 public:
-    explicit ValidationError(const QString& field = "", ValidationErrorType type = ValidationErrorType::None,
-                             const QString& message = "", const QString& suggestion = "");
+    explicit ValidationError(const std::string& field = "", ValidationErrorType type = ValidationErrorType::None,
+                             const std::string& message = "", const std::string& suggestion = "");
 
     /// @brief Get the field that failed validation
-    [[nodiscard]] const QString& field() const { return field_; }
+    [[nodiscard]] const std::string& field() const { return field_; }
 
     /// @brief Get the error type
     [[nodiscard]] ValidationErrorType type() const { return type_; }
 
     /// @brief Get the error message
-    [[nodiscard]] const QString& message() const { return message_; }
+    [[nodiscard]] const std::string& message() const { return message_; }
 
     /// @brief Get suggested fix
-    [[nodiscard]] const QString& suggestion() const { return suggestion_; }
+    [[nodiscard]] const std::string& suggestion() const { return suggestion_; }
 
     /// @brief Get error severity (0 = low, 1 = medium, 2 = high)
     [[nodiscard]] int severity() const;
@@ -43,10 +42,10 @@ public:
     bool operator!=(const ValidationError& other) const;
 
 private:
-    QString field_;
+    std::string field_;
     ValidationErrorType type_;
-    QString message_;
-    QString suggestion_;
+    std::string message_;
+    std::string suggestion_;
 };
 
 /// @brief Collection of validation errors
