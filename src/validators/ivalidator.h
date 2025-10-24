@@ -8,7 +8,7 @@
 #include <nlohmann/json.hpp>
 #include <vector>
 
-using json = nlohmann::json;
+using json = nlohmann::ordered_json;
 
 namespace configgui {
 namespace validators {

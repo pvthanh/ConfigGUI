@@ -358,69 +358,6 @@
       "description": "type nest object that contain individual rule configurations",
       "additionalProperties": false,
       "properties": {
-        "GeometryEquivalenceRule": {
-          "type": "object",
-          "description": "type nest object that contain fieldName, tolerance",
-          "additionalProperties": false,
-          "properties": {
-            "fieldName": {
-              "type": "string",
-              "default": "LINK_ID",
-              "examples": [
-                "LINK_ID"
-              ],
-              "x-hint": "Field used to compare geometry equivalence"
-            },
-            "tolerance": {
-              "type": "number",
-              "exclusiveMinimum": 0,
-              "default": 1e-06,
-              "examples": [
-                1e-06
-              ],
-              "x-hint": "Tolerance (must be > 0). Example: 1e-6"
-            }
-          },
-          "required": [
-            "fieldName",
-            "tolerance"
-          ]
-        },
-        "ShapefilePrjRule": {
-          "type": "object",
-          "description": "type nest object that contain acceptedTokens",
-          "additionalProperties": false,
-          "properties": {
-            "acceptedTokens": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              },
-              "default": [
-                "WGS 84",
-                "WGS84",
-                "WGS_1984",
-                "WGS-84",
-                "EPSG:4326",
-                "4326"
-              ],
-              "examples": [
-                [
-                  "WGS 84",
-                  "WGS84",
-                  "WGS_1984",
-                  "WGS-84",
-                  "EPSG:4326",
-                  "4326"
-                ]
-              ],
-              "x-hint": "List of accepted PRJ tokens"
-            }
-          },
-          "required": [
-            "acceptedTokens"
-          ]
-        },
         "3DFileCompletenessRule": {
           "type": "object",
           "description": "type nest object that contain requiredSuffixes, searchRecursively",
@@ -461,78 +398,6 @@
           "required": [
             "requiredSuffixes",
             "searchRecursively"
-          ]
-        },
-        "ShapefileCompletenessRule": {
-          "type": "object",
-          "description": "type nest object that contain requiredComponents, caseSensitive",
-          "additionalProperties": false,
-          "properties": {
-            "requiredComponents": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              },
-              "default": [
-                ".shx",
-                ".dbf"
-              ],
-              "examples": [
-                [
-                  ".shx",
-                  ".dbf"
-                ]
-              ],
-              "x-hint": "Required component extensions"
-            },
-            "caseSensitive": {
-              "type": "boolean",
-              "default": false,
-              "examples": [
-                false
-              ],
-              "x-hint": "Whether component names are case-sensitive"
-            }
-          },
-          "required": [
-            "requiredComponents",
-            "caseSensitive"
-          ]
-        },
-        "ObjMtlReferenceRule": {
-          "type": "object",
-          "description": "type nest object that contain expectedMtlExtension, caseSensitive, allowMissingMtllib",
-          "additionalProperties": false,
-          "properties": {
-            "expectedMtlExtension": {
-              "type": "string",
-              "default": ".MTL",
-              "examples": [
-                ".MTL"
-              ],
-              "x-hint": "Expected MTL file extension"
-            },
-            "caseSensitive": {
-              "type": "boolean",
-              "default": false,
-              "examples": [
-                false
-              ],
-              "x-hint": "Case-sensitive extension matching"
-            },
-            "allowMissingMtllib": {
-              "type": "boolean",
-              "default": false,
-              "examples": [
-                false
-              ],
-              "x-hint": "Allow OBJ without mtllib reference"
-            }
-          },
-          "required": [
-            "expectedMtlExtension",
-            "caseSensitive",
-            "allowMissingMtllib"
           ]
         },
         "BuildingTableRule": {
@@ -581,6 +446,34 @@
             "expectedHeaders"
           ]
         },
+        "GeometryEquivalenceRule": {
+          "type": "object",
+          "description": "type nest object that contain fieldName, tolerance",
+          "additionalProperties": false,
+          "properties": {
+            "fieldName": {
+              "type": "string",
+              "default": "LINK_ID",
+              "examples": [
+                "LINK_ID"
+              ],
+              "x-hint": "Field used to compare geometry equivalence"
+            },
+            "tolerance": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "default": 1e-06,
+              "examples": [
+                1e-06
+              ],
+              "x-hint": "Tolerance (must be > 0). Example: 1e-6"
+            }
+          },
+          "required": [
+            "fieldName",
+            "tolerance"
+          ]
+        },
         "LinksGeometryRule": {
           "type": "object",
           "description": "type nest object that contain require_sdo_or_wkt, expectedHeaders",
@@ -617,6 +510,136 @@
           "required": [
             "require_sdo_or_wkt",
             "expectedHeaders"
+          ]
+        },
+        "LinksTableRule": {
+          "type": "object",
+          "description": "type nest object that contain check_private, check_tollway, check_public_access, boolean_tokens, expectedHeaders",
+          "additionalProperties": false,
+          "properties": {
+            "check_private": {
+              "type": "boolean",
+              "default": false,
+              "examples": [
+                false
+              ],
+              "x-hint": "If true, validate 'PRIVATE' via DataTypeValidationRule"
+            },
+            "check_tollway": {
+              "type": "boolean",
+              "default": false,
+              "examples": [
+                false
+              ],
+              "x-hint": "If true, validate 'TOLLWAY' via DataTypeValidationRule"
+            },
+            "check_public_access": {
+              "type": "boolean",
+              "default": false,
+              "examples": [
+                false
+              ],
+              "x-hint": "If true, validate 'PUBLIC_ACCESS' via DataTypeValidationRule"
+            },
+            "boolean_tokens": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": [
+                "true",
+                "false",
+                "1",
+                "0",
+                "yes",
+                "no"
+              ],
+              "examples": [
+                [
+                  "true",
+                  "false",
+                  "1",
+                  "0",
+                  "yes",
+                  "no"
+                ]
+              ],
+              "x-hint": "Tokens treated as boolean"
+            },
+            "expectedHeaders": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": [
+                "LINK_ID",
+                "ACCESS_ID",
+                "FUNCTIONAL_CLASS",
+                "TRAVEL_DIRECTION",
+                "PRIVATE",
+                "TOLLWAY",
+                "FROM_SPEED_LIMIT",
+                "TO_SPEED_LIMIT",
+                "PUBLIC_ACCESS"
+              ],
+              "examples": [
+                [
+                  "LINK_ID",
+                  "ACCESS_ID",
+                  "FUNCTIONAL_CLASS",
+                  "TRAVEL_DIRECTION",
+                  "PRIVATE",
+                  "TOLLWAY",
+                  "FROM_SPEED_LIMIT",
+                  "TO_SPEED_LIMIT",
+                  "PUBLIC_ACCESS"
+                ]
+              ],
+              "x-hint": "Expected CSV header names"
+            }
+          },
+          "required": [
+            "check_private",
+            "check_tollway",
+            "check_public_access",
+            "boolean_tokens",
+            "expectedHeaders"
+          ]
+        },
+        "ObjMtlReferenceRule": {
+          "type": "object",
+          "description": "type nest object that contain expectedMtlExtension, caseSensitive, allowMissingMtllib",
+          "additionalProperties": false,
+          "properties": {
+            "expectedMtlExtension": {
+              "type": "string",
+              "default": ".MTL",
+              "examples": [
+                ".MTL"
+              ],
+              "x-hint": "Expected MTL file extension"
+            },
+            "caseSensitive": {
+              "type": "boolean",
+              "default": false,
+              "examples": [
+                false
+              ],
+              "x-hint": "Case-sensitive extension matching"
+            },
+            "allowMissingMtllib": {
+              "type": "boolean",
+              "default": false,
+              "examples": [
+                false
+              ],
+              "x-hint": "Allow OBJ without mtllib reference"
+            }
+          },
+          "required": [
+            "expectedMtlExtension",
+            "caseSensitive",
+            "allowMissingMtllib"
           ]
         },
         "PoiTableRule": {
@@ -739,6 +762,77 @@
           },
           "required": [
             "expected_children"
+          ]
+        },
+        "ShapefileCompletenessRule": {
+          "type": "object",
+          "description": "type nest object that contain requiredComponents, caseSensitive",
+          "additionalProperties": false,
+          "properties": {
+            "requiredComponents": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": [
+                ".shx",
+                ".dbf"
+              ],
+              "examples": [
+                [
+                  ".shx",
+                  ".dbf"
+                ]
+              ],
+              "x-hint": "Required component extensions"
+            },
+            "caseSensitive": {
+              "type": "boolean",
+              "default": false,
+              "examples": [
+                false
+              ],
+              "x-hint": "Whether component names are case-sensitive"
+            }
+          },
+          "required": [
+            "requiredComponents",
+            "caseSensitive"
+          ]
+        },
+        "ShapefilePrjRule": {
+          "type": "object",
+          "description": "type nest object that contain acceptedTokens",
+          "additionalProperties": false,
+          "properties": {
+            "acceptedTokens": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": [
+                "WGS 84",
+                "WGS84",
+                "WGS_1984",
+                "WGS-84",
+                "EPSG:4326",
+                "4326"
+              ],
+              "examples": [
+                [
+                  "WGS 84",
+                  "WGS84",
+                  "WGS_1984",
+                  "WGS-84",
+                  "EPSG:4326",
+                  "4326"
+                ]
+              ],
+              "x-hint": "List of accepted PRJ tokens"
+            }
+          },
+          "required": [
+            "acceptedTokens"
           ]
         },
         "dataTypeValidationRule": {
@@ -952,102 +1046,22 @@
             "synonyms",
             "rules"
           ]
-        },
-        "LinksTableRule": {
-          "type": "object",
-          "description": "type nest object that contain check_private, check_tollway, check_public_access, boolean_tokens, expectedHeaders",
-          "additionalProperties": false,
-          "properties": {
-            "check_private": {
-              "type": "boolean",
-              "default": false,
-              "examples": [
-                false
-              ],
-              "x-hint": "If true, validate 'PRIVATE' via DataTypeValidationRule"
-            },
-            "check_tollway": {
-              "type": "boolean",
-              "default": false,
-              "examples": [
-                false
-              ],
-              "x-hint": "If true, validate 'TOLLWAY' via DataTypeValidationRule"
-            },
-            "check_public_access": {
-              "type": "boolean",
-              "default": false,
-              "examples": [
-                false
-              ],
-              "x-hint": "If true, validate 'PUBLIC_ACCESS' via DataTypeValidationRule"
-            },
-            "boolean_tokens": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              },
-              "default": [
-                "true",
-                "false",
-                "1",
-                "0",
-                "yes",
-                "no"
-              ],
-              "examples": [
-                [
-                  "true",
-                  "false",
-                  "1",
-                  "0",
-                  "yes",
-                  "no"
-                ]
-              ],
-              "x-hint": "Tokens treated as boolean"
-            },
-            "expectedHeaders": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              },
-              "default": [
-                "LINK_ID",
-                "ACCESS_ID",
-                "FUNCTIONAL_CLASS",
-                "TRAVEL_DIRECTION",
-                "PRIVATE",
-                "TOLLWAY",
-                "FROM_SPEED_LIMIT",
-                "TO_SPEED_LIMIT",
-                "PUBLIC_ACCESS"
-              ],
-              "examples": [
-                [
-                  "LINK_ID",
-                  "ACCESS_ID",
-                  "FUNCTIONAL_CLASS",
-                  "TRAVEL_DIRECTION",
-                  "PRIVATE",
-                  "TOLLWAY",
-                  "FROM_SPEED_LIMIT",
-                  "TO_SPEED_LIMIT",
-                  "PUBLIC_ACCESS"
-                ]
-              ],
-              "x-hint": "Expected CSV header names"
-            }
-          },
-          "required": [
-            "check_private",
-            "check_tollway",
-            "check_public_access",
-            "boolean_tokens",
-            "expectedHeaders"
-          ]
         }
-      }
+      },
+      "required": [
+        "3DFileCompletenessRule",
+        "BuildingTableRule",
+        "GeometryEquivalenceRule",
+        "LinksGeometryRule",
+        "LinksTableRule",
+        "ObjMtlReferenceRule",
+        "PoiTableRule",
+        "RdfIntegrityRule",
+        "RootStructureRule",
+        "ShapefileCompletenessRule",
+        "ShapefilePrjRule",
+        "dataTypeValidationRule"
+      ]
     }
   },
   "required": [

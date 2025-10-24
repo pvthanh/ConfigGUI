@@ -11,7 +11,12 @@
         ".specify/scripts/powershell/": true
     },
     "files.associations": {
-        "shared_mutex": "cpp"
+        "shared_mutex": "cpp",
+        "array": "cpp",
+        "string": "cpp",
+        "string_view": "cpp",
+        "ranges": "cpp",
+        "span": "cpp"
     }
 }
 

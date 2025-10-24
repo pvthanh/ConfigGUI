@@ -8,19 +8,12 @@
     "rdf": [
       "RdfIntegrityRule",
       "DataTypeValidationRule",
-      "LinksTableRule",
-      "LinksGeometryRule",
-      "PoiTableRule",
-      "BuildingTableRule",
-      "GeometryEquivalenceRule"
+      "LinksTableRule"
     ],
     "shapefiles": [
-      "ShapefileCompletenessRule",
-      "ShapefilePrjRule",
-      "GeometryEquivalenceRule"
+      "ShapefileCompletenessRule"
     ],
     "3d-landmarks": [
-      "3DFileCompletenessRule",
       "ObjMtlReferenceRule"
     ],
     "default": [
@@ -30,26 +23,26 @@
       "RootStructureRule"
     ]
   },
-  "parallelism": 4,
+  "parallelism": 40,
   "parallelismByMode": {
-    "auto": 4,
-    "rdf": 3,
+    "auto": 40,
+    "rdf": 30,
     "3d-landmarks": 2,
     "shapefiles": 2
   },
-  "maxTasksInFlight": 15,
+  "maxTasksInFlight": 80,
   "report": {
-    "json": "output/report.json",
-    "csv": "output/report.csv"
+    "json": "output/report.json_test",
+    "csv": "output/report.csv_test"
   },
   "alerts": {
     "enabled": true,
-    "configPath": "config/alerts.local.json"
+    "configPath": "config/alerts.local.json_test"
   },
   "configureRules": {
     "3DFileCompletenessRule": {
       "requiredSuffixes": [
-        "_L.OBJ",
+        "_L.OBJ_test",
         "_L.MTL",
         "_S.OBJ",
         "_S.MTL",
@@ -60,7 +53,7 @@
     "BuildingTableRule": {
       "require_sdo_or_wkt": true,
       "expectedHeaders": [
-        "BUILDING_ID",
+        "BUILDING_ID_test",
         "BUILDING_TYPE",
         "HEIGHT",
         "SDO",
@@ -70,13 +63,13 @@
       ]
     },
     "GeometryEquivalenceRule": {
-      "fieldName": "LINK_ID",
+      "fieldName": "LINK_ID_test",
       "tolerance": 1e-06
     },
     "LinksGeometryRule": {
       "require_sdo_or_wkt": true,
       "expectedHeaders": [
-        "LINK_ID",
+        "LINK_ID_test",
         "SDO",
         "WKT"
       ]
@@ -94,7 +87,7 @@
         "no"
       ],
       "expectedHeaders": [
-        "LINK_ID",
+        "LINK_ID_TEST",
         "ACCESS_ID",
         "FUNCTIONAL_CLASS",
         "TRAVEL_DIRECTION",
@@ -106,7 +99,7 @@
       ]
     },
     "ObjMtlReferenceRule": {
-      "expectedMtlExtension": ".MTL",
+      "expectedMtlExtension": ".MTL_test",
       "caseSensitive": false,
       "allowMissingMtllib": false
     },
@@ -116,11 +109,11 @@
         90.0
       ],
       "longitude_range": [
-        -180.0,
+        -171.0,
         180.0
       ],
       "expectedHeaders": [
-        "POI_ID",
+        "POI_ID_test",
         "POI_TYPE",
         "LAT",
         "LON"
@@ -131,21 +124,21 @@
     },
     "RootStructureRule": {
       "expected_children": [
-        "*_3DLandmarks",
+        "*_3DLandmarks_test",
         "*_RDF",
         "*_Shapefiles"
       ]
     },
     "ShapefileCompletenessRule": {
       "requiredComponents": [
-        ".shx",
+        ".shx_test",
         ".dbf"
       ],
       "caseSensitive": false
     },
     "ShapefilePrjRule": {
       "acceptedTokens": [
-        "WGS 84",
+        "WGS 84 Test",
         "WGS84",
         "WGS_1984",
         "WGS-84",
@@ -170,7 +163,7 @@
         {
           "name": "type",
           "type": "string",
-          "allowEmpty": false
+          "allowEmpty": true
         },
         {
           "name": "link id",
@@ -200,14 +193,18 @@
           "enum": [
             "intersection",
             "termination of a link",
-            "change of attribution",
-            "shape point"
+            "change of attribution"
           ]
+        },
+        {
+          "name": "shape point",
+          "type": "string",
+          "allowEmpty": true
         },
         {
           "name": "z-level",
           "type": "string",
-          "allowEmpty": false
+          "allowEmpty": true
         },
         {
           "name": "aligned",
@@ -217,12 +214,12 @@
         {
           "name": "street name",
           "type": "string",
-          "allowEmpty": false
+          "allowEmpty": true
         },
         {
           "name": "address range",
           "type": "string",
-          "allowEmpty": false
+          "allowEmpty": true
         },
         {
           "name": "address scheme",
@@ -242,7 +239,7 @@
         {
           "name": "access characteristics",
           "type": "string",
-          "allowEmpty": false
+          "allowEmpty": true
         },
         {
           "name": "functional class",
@@ -254,17 +251,17 @@
         {
           "name": "language code",
           "type": "string",
-          "allowEmpty": false
+          "allowEmpty": true
         },
         {
           "name": "country",
           "type": "string",
-          "allowEmpty": false
+          "allowEmpty": true
         },
         {
           "name": "postal code",
           "type": "string",
-          "allowEmpty": false
+          "allowEmpty": true
         },
         {
           "name": "cartography feature",
@@ -284,7 +281,7 @@
         {
           "name": "poi name",
           "type": "string",
-          "allowEmpty": false
+          "allowEmpty": true
         },
         {
           "name": "phone number",
@@ -295,27 +292,27 @@
         {
           "name": "open 24 hours",
           "type": "boolean",
-          "allowEmpty": false
+          "allowEmpty": true
         },
         {
           "name": "parent/child poi",
           "type": "string",
-          "allowEmpty": false
+          "allowEmpty": true
         },
         {
           "name": "tollway",
           "type": "string",
-          "allowEmpty": false
+          "allowEmpty": true
         },
         {
           "name": "private",
           "type": "string",
-          "allowEmpty": false
+          "allowEmpty": true
         },
         {
           "name": "public_access",
           "type": "string",
-          "allowEmpty": false
+          "allowEmpty": true
         }
       ]
     }

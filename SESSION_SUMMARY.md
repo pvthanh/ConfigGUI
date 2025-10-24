@@ -1,13 +1,27 @@
-# Session Summary - AutoRules Save Issue Investigation
+# Session Summary - Field Name Collision Fix
 
-## Session Goal
-Investigate and fix the issue where autoRules array fields (rdf, shapefiles, 3d-landmarks) are being saved as numbers instead of string arrays.
+**Status**: ✅ **COMPLETE - IMPLEMENTATION & COMPILATION SUCCESSFUL**
+
+## Problem
+autoRules array fields (rdf, shapefiles, 3d-landmarks) saving as numbers (2, 3) instead of string arrays
+
+## Root Cause
+**Field name collision** in `field_widgets_` map:
+- Both `autoRules.rdf` AND `parallelismByMode.rdf` register with key "rdf"
+- Second overwrites first
+- Wrong widget type (QSpinBox instead of ArrayWidget) used during save
+
+## Solution Implemented
+Use **qualified field names** (full paths) instead of simple names:
+- Before: `field_widgets_["rdf"]` (collision)
+- After: `field_widgets_["autoRules.rdf"]` + `field_widgets_["parallelismByMode.rdf"]` (no collision)
 
 ## What Was Done
 
 ### 1. Issue Analysis ✓
 - Identified that autoRules arrays save as integer counts (2, 3) instead of arrays
 - Found pattern: rdf/shapefiles/3d-landmarks save wrong, but default/rootRules save correctly
+- Discovered root cause: Field name collision in field_widgets_ map
 - Discovered count values match array element counts suggesting data is being truncated
 
 ### 2. Code Inspection ✓

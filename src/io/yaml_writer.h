@@ -8,7 +8,7 @@
 #include <nlohmann/json.hpp>
 #include <string>
 
-using json = nlohmann::json;
+using json = nlohmann::ordered_json;
 using configgui::core::Result;
 using YamlResult = configgui::core::Result<nlohmann::json, std::string>;
 

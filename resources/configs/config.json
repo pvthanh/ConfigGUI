@@ -11,91 +11,86 @@
     "rdf": [
       "RdfIntegrityRule",
       "DataTypeValidationRule",
-      "LinksTableRule",
-      "LinksGeometryRule",
-      "PoiTableRule",
-      "BuildingTableRule",
-      "GeometryEquivalenceRule"
+      "LinksTableRule"
     ],
     "shapefiles": [
-      "ShapefileCompletenessRule",
-      "ShapefilePrjRule",
-      "GeometryEquivalenceRule"
+      "ShapefileCompletenessRule"
     ],
     "3d-landmarks": [
-      "3DFileCompletenessRule",
-      "ObjMtlReferenceRule"
+      "3DFileCompletenessRule"
     ],
     "default": [
       "3DFileCompletenessRule"
-    ]
+    ],
+    "rootRules": [
+    "RootStructureRule"
+  ]
   },
-  "rootRules": ["RootStructureRule"],
-  "parallelism": 4,
+  "parallelism": 40,
   "parallelismByMode": {
-    "auto": 4,
-    "rdf": 3,
+    "auto": 40,
+    "rdf": 30,
     "3d-landmarks": 2
   },
-  "maxTasksInFlight": 8,
+  "maxTasksInFlight": 80,
   "report": {
-    "json": "output/report.json",
-    "csv": "output/report.csv"
+    "json": "output/report.json_test",
+    "csv": "output/report.csv_test"
   },
   "alerts": {
     "enabled": true,
-    "configPath": "config/alerts.local.json"
+    "configPath": "config/alerts.local.json_test"
   },
   "configureRules": {
     "GeometryEquivalenceRule": {
-      "fieldName": "LINK_ID",
+      "fieldName": "LINK_ID_test",
       "tolerance": 1e-6
     },
     "ShapefilePrjRule": {
-      "acceptedTokens": ["WGS 84", "WGS84", "WGS_1984", "WGS-84", "EPSG:4326", "4326"]
+      "acceptedTokens": ["WGS 84 Test", "WGS84", "WGS_1984", "WGS-84", "EPSG:4326", "4326"]
     },
     "3DFileCompletenessRule": {
-      "requiredSuffixes": ["_L.OBJ", "_L.MTL", "_S.OBJ", "_S.MTL", "_ICON.TGA"],
+      "requiredSuffixes": ["_L.OBJ_test", "_L.MTL", "_S.OBJ", "_S.MTL", "_ICON.TGA"],
       "searchRecursively": true
     },
 
     "ShapefileCompletenessRule": {
-      "requiredComponents": [".shx", ".dbf"],
+      "requiredComponents": [".shx_test", ".dbf"],
       "caseSensitive": false
     },
     "ObjMtlReferenceRule": {
-      "expectedMtlExtension": ".MTL",
+      "expectedMtlExtension": ".MTL_test",
       "caseSensitive": false,
       "allowMissingMtllib": false
     },
     "BuildingTableRule": {
       "require_sdo_or_wkt": true,
       "expectedHeaders": [
-        "BUILDING_ID","BUILDING_TYPE","HEIGHT","SDO","WKT","LAT","LON"
+        "BUILDING_ID_test","BUILDING_TYPE","HEIGHT","SDO","WKT","LAT","LON"
       ]
     },
     "LinksGeometryRule": {
       "require_sdo_or_wkt": true,
       "expectedHeaders": [
-        "LINK_ID","SDO","WKT"
+        "LINK_ID_test","SDO","WKT"
       ]
     },
     "PoiTableRule": {
       "latitude_range": [-90.0, 90.0],
       "longitude_range": [-180.0, 180.0],
       "expectedHeaders": [
-        "POI_ID","POI_TYPE","LAT","LON"
+        "POI_ID_test","POI_TYPE","LAT","LON"
       ]
     },
     "RdfIntegrityRule": {
       "check_building_3d_subfolders": true
     },
     "RootStructureRule": {
-      "expected_children": ["*_3DLandmarks", "*_RDF", "*_Shapefiles"]
+      "expected_children": ["*_3DLandmarks_test", "*_RDF", "*_Shapefiles"]
     },
     "dataTypeValidationRule": {
       "synonyms": {
-        "link id": "Link ID",
+        "link id": "Link ID_test",
         "linkid": "Link ID",
         "latitude": "Latitude / Longitude",
         "longitude": "Latitude / Longitude",
@@ -128,7 +123,7 @@
         "polygon formation": { "type": "string", "allowEmpty": false },
         "poi category": { "type": "string", "allowEmpty": false },
         "poi name": "string?",
-        "phone number": { "type": "string", "allowEmpty": true, "pattern": "^\\+?[0-9 \\-/()]{3,}$" },
+        "phone number": { "type": "string", "allowEmpty": true, "pattern": "^\\+?[0-9 \\-/()]{3,}$ Test" },
         "open 24 hours": "boolean?",
         "parent/child poi": "string?",
         "tollway": "string?",

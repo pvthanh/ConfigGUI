@@ -61,27 +61,14 @@ bool FormGenerator::generateFromSchema(const json& schema)
         return false;
     }
 
-    // Use "required" array to maintain order if available, otherwise iterate normally
+    // Use schema properties order to maintain consistency between form generation and data collection
     std::vector<std::string> field_order;
     
-    if (schema.contains("required") && schema["required"].is_array())
+    // Always use properties definition order (order in schema JSON)
+    // This ensures consistent ordering between form display and saved data
+    for (auto it = properties.begin(); it != properties.end(); ++it)
     {
-        // Use the required array order
-        for (const auto& required_field : schema["required"])
-        {
-            if (required_field.is_string())
-            {
-                field_order.push_back(required_field.get<std::string>());
-            }
-        }
-    }
-    else
-    {
-        // Fallback: iterate through properties (may not preserve order)
-        for (auto it = properties.begin(); it != properties.end(); ++it)
-        {
-            field_order.push_back(it.key());
-        }
+        field_order.push_back(it.key());
     }
 
     // Iterate in determined order
@@ -100,6 +87,13 @@ bool FormGenerator::generateFromSchema(const json& schema)
 }
 
 void FormGenerator::addFieldToForm(const QString& field_name, const json& field_schema)
+{
+    // Add with empty parent path since this is top-level
+    addFieldToFormWithPath(layout_, field_name, field_schema, field_name);
+}
+
+void FormGenerator::addFieldToFormWithPath(QVBoxLayout* parent_layout, const QString& field_name, 
+                                          const json& field_schema, const QString& qualified_name)
 {
     // Step 1: Check if it's a nested object with properties (type=object)
     if (field_schema.is_object() && field_schema.contains("properties"))
@@ -180,7 +174,9 @@ void FormGenerator::addFieldToForm(const QString& field_name, const json& field_
                 {
                     const QString nested_field_name = QString::fromStdString(nested_field_name_str);
                     const json& nested_field_schema = properties[nested_field_name_str];
-                    addFieldToFormWithMetadata(inner_layout, nested_field_name, nested_field_schema);
+                    // Build qualified name by appending to parent path
+                    QString nested_qualified = qualified_name + "." + nested_field_name;
+                    addFieldToFormWithMetadata(inner_layout, nested_field_name, nested_field_schema, nested_qualified);
                 }
             }
             
@@ -197,17 +193,21 @@ void FormGenerator::addFieldToForm(const QString& field_name, const json& field_
                 toggle_button->setText(is_visible ? "▶" : "▼");  // Toggle arrow direction
             });
             
-            layout_->addWidget(section_container);
+            parent_layout->addWidget(section_container);
             return;
         }
     }
 
     // Step 2: Otherwise, add as a simple field with metadata
-    addFieldToFormWithMetadata(layout_, field_name, field_schema);
+    addFieldToFormWithMetadata(parent_layout, field_name, field_schema, qualified_name);
 }
 
-void FormGenerator::addFieldToFormWithMetadata(QVBoxLayout* parent_layout, const QString& field_name, const json& field_schema)
+void FormGenerator::addFieldToFormWithMetadata(QVBoxLayout* parent_layout, const QString& field_name, 
+                                              const json& field_schema, const QString& qualified_name)
 {
+    // Use simple name if no qualified name provided
+    QString use_key = qualified_name.isEmpty() ? field_name : qualified_name;
+    
     // Step 1: Check if it's a nested object with properties
     if (field_schema.is_object() && field_schema.contains("properties"))
     {
@@ -287,8 +287,10 @@ void FormGenerator::addFieldToFormWithMetadata(QVBoxLayout* parent_layout, const
                     const QString nested_field_name = QString::fromStdString(nested_field_name_str);
                     const json& nested_field_schema = properties[nested_field_name_str];
                     
+                    // Build qualified name by appending to parent path
+                    QString nested_qualified = use_key + "." + nested_field_name;
                     // Recursively handle nested fields (this will call addFieldToFormWithMetadata again)
-                    addFieldToFormWithMetadata(inner_layout, nested_field_name, nested_field_schema);
+                    addFieldToFormWithMetadata(inner_layout, nested_field_name, nested_field_schema, nested_qualified);
                 }
             }
             
@@ -403,12 +405,13 @@ void FormGenerator::addFieldToFormWithMetadata(QVBoxLayout* parent_layout, const
 
     parent_layout->addWidget(field_container);
 
-    // Track the field widget
+    // Track the field widget using QUALIFIED name to avoid collisions
     FieldWidget fw{widget, field_name, field_schema};
-    field_widgets_[field_name] = fw;
+    field_widgets_[use_key] = fw;
     
-    // Debug: Log field registration
-    std::cerr << "[addFieldToFormWithMetadata] Registered field: " << field_name.toStdString() 
+    // Debug: Log field registration with qualified name
+    std::cerr << "[addFieldToFormWithMetadata] Registered field: " << use_key.toStdString() 
+              << " (display name: " << field_name.toStdString() << ")"
               << ", widget type: ";
     if (qobject_cast<ArrayWidget*>(widget))
         std::cerr << "ArrayWidget";
@@ -575,13 +578,14 @@ void FormGenerator::addSimpleFieldToForm(const QString& field_name, const json& 
 json FormGenerator::getFormData() const
 {
     // Use recursive collection to handle multi-level nested structures
+    // Start with empty parent path for top-level
     std::cerr << "[getFormData] Starting form data collection..." << std::endl;
-    auto result = collectDataRecursive(schema_);
+    auto result = collectDataRecursive(schema_, "");
     std::cerr << "[getFormData] Completed. Result: " << result.dump(2) << std::endl;
     return result;
 }
 
-json FormGenerator::collectDataRecursive(const json& schema) const
+json FormGenerator::collectDataRecursive(const json& schema, const QString& parent_path) const
 {
     json data = json::object();
 
@@ -592,23 +596,37 @@ json FormGenerator::collectDataRecursive(const json& schema) const
 
     const auto& properties = schema["properties"];
 
-    std::cerr << "[collectDataRecursive] Processing " << properties.size() << " properties" << std::endl;
-    std::cerr << "[collectDataRecursive] field_widgets_ has " << field_widgets_.size() << " entries:" << std::endl;
-    for (auto it = field_widgets_.begin(); it != field_widgets_.end(); ++it)
-    {
-        std::cerr << "  - " << it.key().toStdString() << std::endl;
-    }
+    std::cerr << "[collectDataRecursive] Processing " << properties.size() << " properties with parent_path: \"" 
+              << parent_path.toStdString() << "\"" << std::endl;
 
+    // Build field_order using schema properties order (definition order in JSON)
+    // This ensures the saved output matches the schema's property ordering
+    std::vector<std::string> field_order;
+    
+    // Always use properties definition order (not required array order)
     for (auto it = properties.begin(); it != properties.end(); ++it)
     {
-        const std::string key = it.key();
-        const json& prop_schema = it.value();
-        const QString q_key = QString::fromStdString(key);
+        field_order.push_back(it.key());
+    }
 
-        std::cerr << "[collectDataRecursive] Processing property: \"" << key << "\"" << std::endl;
+    // Iterate through fields in the determined order (matching GUI display order)
+    for (const auto& key : field_order)
+    {
+        if (!properties.contains(key))
+        {
+            continue;  // Skip if property doesn't exist
+        }
+
+        const json& prop_schema = properties[key];
+        const QString q_key = QString::fromStdString(key);
+        
+        // Build qualified key for lookup
+        QString qualified_key = parent_path.isEmpty() ? q_key : (parent_path + "." + q_key);
+
+        std::cerr << "[collectDataRecursive] Processing property: \"" << key 
+                  << "\", qualified_key: \"" << qualified_key.toStdString() << "\"" << std::endl;
         std::cerr << "  - has properties: " << (prop_schema.is_object() && prop_schema.contains("properties") ? "YES" : "NO") << std::endl;
-        std::cerr << "  - looking for key: \"" << q_key.toStdString() << "\"" << std::endl;
-        std::cerr << "  - in field_widgets: " << (field_widgets_.contains(q_key) ? "YES" : "NO") << std::endl;
+        std::cerr << "  - in field_widgets: " << (field_widgets_.contains(qualified_key) ? "YES" : "NO") << std::endl;
 
         // Check if this is a nested object with properties
         if (prop_schema.is_object() && prop_schema.contains("properties"))
@@ -620,16 +638,16 @@ json FormGenerator::collectDataRecursive(const json& schema) const
 
             if (type_str == "object")
             {
-                // Recursively collect nested object data
-                std::cerr << "  - Recursing into nested object" << std::endl;
-                data[key] = collectDataRecursive(prop_schema);
+                // Recursively collect nested object data with new parent path
+                std::cerr << "  - Recursing into nested object with parent_path: " << qualified_key.toStdString() << std::endl;
+                data[key] = collectDataRecursive(prop_schema, qualified_key);
             }
             else
             {
                 // Handle as a regular property if not explicitly object type
-                if (field_widgets_.contains(q_key))
+                if (field_widgets_.contains(qualified_key))
                 {
-                    const FieldWidget& fw = field_widgets_[q_key];
+                    const FieldWidget& fw = field_widgets_[qualified_key];
                     
                     if (auto* line_edit = qobject_cast<QLineEdit*>(fw.widget))
                         data[key] = line_edit->text().toStdString();
@@ -656,12 +674,12 @@ json FormGenerator::collectDataRecursive(const json& schema) const
         }
         else
         {
-            // Simple field - try to get from field_widgets_
-            if (field_widgets_.contains(q_key))
+            // Simple field - try to get from field_widgets_ using qualified key
+            if (field_widgets_.contains(qualified_key))
             {
-                const FieldWidget& fw = field_widgets_[q_key];
+                const FieldWidget& fw = field_widgets_[qualified_key];
                 
-                std::cerr << "  - FOUND, attempting to get value" << std::endl;
+                std::cerr << "  - FOUND" << std::endl;
                 
                 if (auto* line_edit = qobject_cast<QLineEdit*>(fw.widget))
                     data[key] = line_edit->text().toStdString();
@@ -698,7 +716,7 @@ json FormGenerator::collectDataRecursive(const json& schema) const
         }
     }
 
-    std::cerr << "[collectDataRecursive] Completed" << std::endl;
+    std::cerr << "[collectDataRecursive] Completed for parent_path: " << parent_path.toStdString() << std::endl;
     return data;
 }
 
@@ -710,22 +728,80 @@ void FormGenerator::setFormData(const json& data)
     }
 
     // Recursively apply values at any nesting level
-    applyDataRecursive(data);
+    applyDataRecursive(data, "");
 
     is_dirty_ = false;
 }
 
-void FormGenerator::applyDataRecursive(const json& obj)
+void FormGenerator::applyDataRecursive(const json& obj, const QString& parent_path)
 {
+    // Get the schema for this level to help with defaults
+    json level_schema = schema_;
+    
+    // Navigate schema to current level based on parent_path
+    if (!parent_path.isEmpty())
+    {
+        QString temp_path = parent_path;
+        QStringList path_parts = temp_path.split(".");
+        
+        for (const QString& part : path_parts)
+        {
+            if (level_schema.contains("properties") && level_schema["properties"].contains(part.toStdString()))
+            {
+                level_schema = level_schema["properties"][part.toStdString()];
+            }
+            else
+            {
+                std::cerr << "[applyDataRecursive] Warning: Could not find schema for path part: " << part.toStdString() << std::endl;
+                break;
+            }
+        }
+    }
+    
     for (auto it = obj.begin(); it != obj.end(); ++it)
     {
         const std::string key = it.key();
         json value = it.value();  // Make a copy so we can modify if needed
+        const QString q_key = QString::fromStdString(key);
+        
+        // Build qualified key for lookup
+        QString qualified_key = parent_path.isEmpty() ? q_key : (parent_path + "." + q_key);
 
         // DEBUG: Log what we're processing
         std::cerr << "[FormGenerator::applyDataRecursive] Processing key: " << key 
+                  << ", qualified_key: " << qualified_key.toStdString()
                   << ", is_object: " << value.is_object() 
                   << ", is_array: " << value.is_array() << std::endl;
+        
+        // Special handling: If we have an empty nested object with schema definition, populate with defaults
+        if (value.is_object() && value.empty() && level_schema.contains("properties"))
+        {
+            const auto& properties = level_schema["properties"];
+            if (properties.contains(key))
+            {
+                const auto& prop_schema = properties[key];
+                if (prop_schema.contains("properties"))
+                {
+                    std::cerr << "[applyDataRecursive] Found empty nested object for key: " << key 
+                              << ", populating with schema defaults" << std::endl;
+                    
+                    // Recursively populate defaults from schema
+                    const auto& nested_props = prop_schema["properties"];
+                    for (auto prop_it = nested_props.begin(); prop_it != nested_props.end(); ++prop_it)
+                    {
+                        const std::string prop_key = prop_it.key();
+                        const auto& prop_def = prop_it.value();
+                        
+                        if (prop_def.contains("default"))
+                        {
+                            value[prop_key] = prop_def["default"];
+                            std::cerr << "[applyDataRecursive] Set default for " << key << "." << prop_key 
+                                      << " = " << value[prop_key].dump() << std::endl;
+                        }
+                    }
+                }
+            }
+        }
 
         // Special handling for "rules" field: convert shorthand dictionary format to array format
         if (key == "rules" && value.is_object() && !value.is_array())
@@ -771,23 +847,29 @@ void FormGenerator::applyDataRecursive(const json& obj)
         if (value.is_object())
         {
             // Keep descending until we reach leaf values (non-object)
-            std::cerr << "[FormGenerator::applyDataRecursive] Recursing into object: " << key << std::endl;
-            applyDataRecursive(value);
+            std::cerr << "[FormGenerator::applyDataRecursive] Recursing into object: " << key 
+                      << " with parent_path: " << qualified_key.toStdString() << std::endl;
+            applyDataRecursive(value, qualified_key);
         }
         else
         {
-            std::cerr << "[FormGenerator::applyDataRecursive] Calling updateFieldValue for key: " << key << std::endl;
-            updateFieldValue(QString::fromStdString(key), value);
+            std::cerr << "[FormGenerator::applyDataRecursive] Calling updateFieldValue for key: " << key 
+                      << " (qualified: " << qualified_key.toStdString() << ")" << std::endl;
+            updateFieldValue(q_key, value, parent_path);
         }
     }
 }
 
-void FormGenerator::updateFieldValue(const QString& field_name, const json& value)
+void FormGenerator::updateFieldValue(const QString& field_name, const json& value, const QString& parent_path)
 {
-    std::cerr << "[FormGenerator::updateFieldValue] Attempting to update field: " << field_name.toStdString() 
-              << ", field exists in field_widgets_: " << (field_widgets_.contains(field_name) ? "YES" : "NO") << std::endl;
+    // Build qualified key for lookup
+    QString qualified_key = parent_path.isEmpty() ? field_name : (parent_path + "." + field_name);
     
-    if (!field_widgets_.contains(field_name))
+    std::cerr << "[FormGenerator::updateFieldValue] Attempting to update field: " << field_name.toStdString() 
+              << ", qualified_key: " << qualified_key.toStdString()
+              << ", field exists in field_widgets_: " << (field_widgets_.contains(qualified_key) ? "YES" : "NO") << std::endl;
+    
+    if (!field_widgets_.contains(qualified_key))
     {
         std::cerr << "[FormGenerator::updateFieldValue] Field not found, available fields: ";
         for (auto it = field_widgets_.begin(); it != field_widgets_.end(); ++it)
@@ -798,7 +880,7 @@ void FormGenerator::updateFieldValue(const QString& field_name, const json& valu
         return;
     }
 
-    const FieldWidget& fw = field_widgets_[field_name];
+    const FieldWidget& fw = field_widgets_[qualified_key];
 
     if (auto* line_edit = qobject_cast<QLineEdit*>(fw.widget))
     {
@@ -873,20 +955,20 @@ void FormGenerator::updateFieldValue(const QString& field_name, const json& valu
         if (value.is_array())
         {
             std::cerr << "[FormGenerator::updateFieldValue] Setting ObjectArrayWidget values for field: " 
-                      << field_name.toStdString() << ", array size: " << value.size() << std::endl;
+                      << qualified_key.toStdString() << ", array size: " << value.size() << std::endl;
             if (!value.empty())
             {
                 obj_array_widget->setValues(value);
             }
             else
             {
-                std::cerr << "[FormGenerator::updateFieldValue] Skipping empty array for field: " << field_name.toStdString() << std::endl;
+                std::cerr << "[FormGenerator::updateFieldValue] Skipping empty array for field: " << qualified_key.toStdString() << std::endl;
             }
         }
         else
         {
             std::cerr << "[FormGenerator::updateFieldValue] ERROR: Value is not an array for ObjectArrayWidget field: " 
-                      << field_name.toStdString() << ", type: " << static_cast<int>(value.type()) << std::endl;
+                      << qualified_key.toStdString() << ", type: " << static_cast<int>(value.type()) << std::endl;
         }
     }
 }

@@ -9,7 +9,8 @@
 #include <QMap>
 #include <nlohmann/json.hpp>
 
-using json = nlohmann::json;
+// Use ordered_json to preserve field order as defined in schema's "required" array
+using json = nlohmann::ordered_json;
 
 namespace configgui {
 namespace ui {
@@ -84,11 +85,14 @@ private:
     json schema_; // Store schema to rebuild nested structure
 
     void addFieldToForm(const QString& field_name, const json& field_schema);
+    void addFieldToFormWithPath(QVBoxLayout* parent_layout, const QString& field_name, 
+                                 const json& field_schema, const QString& qualified_name);
+    void addFieldToFormWithMetadata(QVBoxLayout* parent_layout, const QString& field_name, 
+                                     const json& field_schema, const QString& qualified_name = "");
     void addSimpleFieldToForm(const QString& field_name, const json& field_schema);
-    void addFieldToFormWithMetadata(QVBoxLayout* parent_layout, const QString& field_name, const json& field_schema);
-    void updateFieldValue(const QString& field_name, const json& value);
-    void applyDataRecursive(const json& obj);
-    json collectDataRecursive(const json& schema) const;
+    void updateFieldValue(const QString& field_name, const json& value, const QString& parent_path = "");
+    void applyDataRecursive(const json& obj, const QString& parent_path = "");
+    json collectDataRecursive(const json& schema, const QString& parent_path = "") const;
 };
 
 } // namespace ui

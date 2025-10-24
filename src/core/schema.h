@@ -9,7 +9,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
-using json = nlohmann::json;
+using json = nlohmann::ordered_json;
 
 namespace configgui {
 namespace core {

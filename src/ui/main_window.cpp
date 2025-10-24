@@ -200,10 +200,10 @@ void MainWindow::loadSchema(const QString& file_path)
     const QString content = QString::fromUtf8(file.readAll());
     file.close();
 
-    // Parse JSON schema
+    // Parse JSON schema using ordered_json to preserve property order
     try
     {
-        const auto schema = nlohmann::json::parse(content.toStdString());
+        const auto schema = nlohmann::ordered_json::parse(content.toStdString());
 
         // Generate form from schema
         if (form_generator_ && form_generator_->generateFromSchema(schema))
@@ -267,8 +267,8 @@ void MainWindow::loadConfiguration(const QString& file_path)
 
     try
     {
-        // Parse the configuration JSON
-        const auto config = nlohmann::json::parse(content.toStdString());
+        // Parse the configuration JSON using ordered_json to preserve property order
+        const auto config = nlohmann::ordered_json::parse(content.toStdString());
 
         // Update form with configuration data
         if (form_generator_)

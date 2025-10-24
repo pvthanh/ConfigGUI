@@ -8,7 +8,7 @@
 #include <memory>
 #include <QString>
 
-using json = nlohmann::json;
+using json = nlohmann::ordered_json;
 
 class QLabel;
 

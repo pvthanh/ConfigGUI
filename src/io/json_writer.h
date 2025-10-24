@@ -8,9 +8,10 @@
 #include <nlohmann/json.hpp>
 #include <string>
 
-using json = nlohmann::json;
+// Use ordered_json to preserve field order as defined in schema
+using json = nlohmann::ordered_json;
 using configgui::core::Result;
-using JsonResult = configgui::core::Result<nlohmann::json, std::string>;
+using JsonResult = configgui::core::Result<nlohmann::ordered_json, std::string>;
 
 // Use an error wrapper to avoid ambiguity when T and E are the same type
 struct Error { std::string message; };

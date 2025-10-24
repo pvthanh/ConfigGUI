@@ -16,8 +16,6 @@
 #include <nlohmann/json.hpp>
 #include "rule_parser.h"
 
-using json = nlohmann::json;
-
 namespace configgui {
 namespace ui {
 

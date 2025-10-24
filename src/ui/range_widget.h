@@ -10,7 +10,7 @@
 #include <QDoubleSpinBox>
 #include <nlohmann/json.hpp>
 
-using json = nlohmann::json;
+using json = nlohmann::ordered_json;
 
 namespace configgui {
 namespace ui {
