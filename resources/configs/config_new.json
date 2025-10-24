@@ -37,7 +37,7 @@
     "3d-landmarks": 2,
     "shapefiles": 2
   },
-  "maxTasksInFlight": 15,
+  "maxTasksInFlight": 8,
   "report": {
     "json": "output/report.json",
     "csv": "output/report.csv"
