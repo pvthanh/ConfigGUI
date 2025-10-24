@@ -290,7 +290,7 @@
           "name": "phone number",
           "type": "string",
           "allowEmpty": true,
-          "pattern": "^\\+?[0-9 \\-/()]{3"
+          "pattern": "^\\+?[0-9 \\-/()]{3,}$"
         },
         {
           "name": "open 24 hours",

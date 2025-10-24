@@ -36,6 +36,20 @@ RuleEditorWidget::RuleEditorWidget(const std::string& field_name, const std::str
     createUI();
 }
 
+RuleEditorWidget::RuleEditorWidget(const std::string& field_name, const RuleDefinition& rule, QWidget* parent)
+    : QWidget(parent)
+    , field_name_(field_name)
+    , current_rule_(rule)
+    , string_allow_empty_(nullptr)
+    , string_pattern_(nullptr)
+    , string_enum_(nullptr)
+    , numeric_minimum_(nullptr)
+    , numeric_maximum_(nullptr)
+{
+    // Use the rule definition directly - no shorthand parsing needed
+    createUI();
+}
+
 void RuleEditorWidget::createUI()
 {
     auto* main_layout = new QVBoxLayout(this);

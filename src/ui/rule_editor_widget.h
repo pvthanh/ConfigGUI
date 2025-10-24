@@ -29,6 +29,15 @@ class RuleEditorWidget : public QWidget
 
 public:
     explicit RuleEditorWidget(const std::string& field_name, const std::string& shorthand, QWidget* parent = nullptr);
+    
+    /**
+     * @brief Constructor that accepts a RuleDefinition directly (avoids shorthand parsing issues)
+     * @param field_name The name of the field
+     * @param rule The rule definition to edit
+     * @param parent Parent widget
+     */
+    explicit RuleEditorWidget(const std::string& field_name, const RuleDefinition& rule, QWidget* parent = nullptr);
+    
     ~RuleEditorWidget() override = default;
 
     /**

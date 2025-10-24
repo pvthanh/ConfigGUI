@@ -142,8 +142,7 @@ QWidget* ObjectArrayWidget::createObjectFormWidget(const json& /* item_schema */
         std::string rule_name = item_data["name"].is_string() ? 
                                 item_data["name"].get<std::string>() : "new_rule";
         
-        // Create a shorthand representation of the rule
-        // Old format: {"name":"type","type":"string", "allowEmpty":false, "pattern":"...", etc}
+        // Create a RuleDefinition from the schema item
         RuleDefinition rule_def;
         rule_def.name = rule_name;
         rule_def.type = item_data.contains("type") && item_data["type"].is_string() ?
@@ -179,10 +178,9 @@ QWidget* ObjectArrayWidget::createObjectFormWidget(const json& /* item_schema */
             }
         }
         
-        // Convert to shorthand
-        std::string shorthand = RuleParser::toShorthand(rule_def);
-        
-        auto* rule_editor = new RuleEditorWidget(rule_name, shorthand, form_widget);
+        // Use the new constructor that accepts RuleDefinition directly
+        // This avoids shorthand parsing issues with patterns containing special characters
+        auto* rule_editor = new RuleEditorWidget(rule_name, rule_def, form_widget);
         form_layout->addRow(rule_editor);
         
         // The RuleEditorWidget will emit ruleChanged() when modified
