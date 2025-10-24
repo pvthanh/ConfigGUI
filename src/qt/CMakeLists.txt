@@ -43,17 +43,19 @@ set(QT_VALIDATOR_SOURCES
     ../validators/enum_validator.cpp
 )
 
-# Qt I/O sources
-set(QT_IO_SOURCES
-    ../io/json_reader.h
-    ../io/json_reader.cpp
-    ../io/json_writer.h
-    ../io/json_writer.cpp
-    ../io/yaml_reader.h
-    ../io/yaml_reader.cpp
-    ../io/yaml_writer.h
-    ../io/yaml_writer.cpp
-)
+# Qt I/O sources (now in core library - commented out to avoid duplication)
+# set(QT_IO_SOURCES
+#     ../io/json_reader.h
+#     ../io/json_reader.cpp
+#     ../io/json_writer.h
+#     ../io/json_writer.cpp
+#     ../io/yaml_reader.h
+#     ../io/yaml_reader.cpp
+#     ../io/yaml_writer.h
+#     ../io/yaml_writer.cpp
+# )
+
+# Note: I/O classes are now in ConfigGUICore static library, linked below
 
 # Qt utilities
 set(QT_UTILS_SOURCES
@@ -68,11 +70,11 @@ set(QT_UTILS_SOURCES
 )
 
 # Main Qt application executable
+# Note: I/O sources are now in ConfigGUICore library
 add_executable(ConfigGUI
     ../main.cpp
     ${QT_UI_SOURCES}
     ${QT_VALIDATOR_SOURCES}
-    ${QT_IO_SOURCES}
     ${QT_UTILS_SOURCES}
 )
 

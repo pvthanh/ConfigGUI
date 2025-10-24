@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "validation_error.h"
+#include "../schema/validation_error.h"
 #include <nlohmann/json.hpp>
 #include <QVariant>
 #include <map>

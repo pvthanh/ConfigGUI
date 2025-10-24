@@ -3,9 +3,9 @@
 
 #pragma once
 
-#include "result.h"
+#include "../result.h"
 #include "schema.h"
-#include "error_types.h"
+#include "../error_types.h"
 #include "validation_error.h"
 #include <QString>
 #include <nlohmann/json.hpp>

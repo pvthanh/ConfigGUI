@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "error_types.h"
+#include "../error_types.h"
 #include <QString>
 #include <string>
 #include <vector>

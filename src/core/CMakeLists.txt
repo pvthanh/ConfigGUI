@@ -3,22 +3,52 @@
 # The core module contains all schema, validation, and I/O logic
 # It will be linked as a static library by both Qt and HTML applications
 
-# Collect core source files
-set(CORE_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/schema.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/schema.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/configuration_data.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/configuration_data.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/validation_error.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/validation_error.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/form_state.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/form_state.h
+# Collect core source files from subdirectories
+
+# Core data model
+set(CORE_DATA_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/data/configuration_data.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/data/configuration_data.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/data/form_state.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/data/form_state.h
+)
+
+# Core schema and validation
+set(CORE_SCHEMA_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/schema/schema.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/schema/schema.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/schema/schema_loader.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/schema/schema_loader.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/schema/schema_validator.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/schema/schema_validator.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/schema/validation_error.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/schema/validation_error.h
+)
+
+# Core I/O operations
+set(CORE_IO_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/io/json_reader.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/io/json_reader.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/io/json_writer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/io/json_writer.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/io/yaml_reader.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/io/yaml_reader.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/io/yaml_writer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/io/yaml_writer.h
+)
+
+# Core infrastructure (no subdirectory)
+set(CORE_BASE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/result.h
     ${CMAKE_CURRENT_SOURCE_DIR}/error_types.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/schema_loader.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/schema_loader.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/schema_validator.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/schema_validator.h
+)
+
+# Combine all core sources
+set(CORE_SOURCES
+    ${CORE_BASE_SOURCES}
+    ${CORE_DATA_SOURCES}
+    ${CORE_SCHEMA_SOURCES}
+    ${CORE_IO_SOURCES}
 )
 
 # Create core static library (no Qt dependencies)
@@ -31,9 +61,12 @@ target_include_directories(ConfigGUICore
         $<INSTALL_INTERFACE:include/core>
 )
 
-# Link dependencies (no Qt - pure C++)
+# Link dependencies
+# Note: Qt is linked here when BUILD_QT_APP=ON (Phase 2 temporary)
+# Will be removed in refactoring to make core truly Qt-free
 target_link_libraries(ConfigGUICore
     PUBLIC
+        $<$<BOOL:${BUILD_QT_APP}>:Qt6::Core>
         nlohmann_json::nlohmann_json
         nlohmann_json_schema_validator
         yaml-cpp
