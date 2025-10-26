@@ -1,0 +1,73 @@
+# Git directory
+.git/
+.gitignore
+
+# Build outputs
+build/
+cmake-build-debug/
+cmake-build-release/
+*.o
+*.a
+*.so
+*.dylib
+*.exe
+*.obj
+*.out
+*.d
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+
+# Test outputs
+*.gcov
+*.gcda
+*.gcno
+
+# Temporary and log files
+*.tmp
+*.log
+*.log*
+
+# Documentation (not needed in container)
+docs/
+specs/
+*.md
+
+# Development files
+.DS_Store
+Thumbs.db
+
+# Coverage reports
+coverage/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Node (if used for frontend development)
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Python (if used for tooling)
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Dependency cache
+.gradle/
+vendor/

@@ -91,6 +91,7 @@ target_link_libraries(ConfigGUI
 target_include_directories(ConfigGUI
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/..
+        ${CMAKE_CURRENT_SOURCE_DIR}/../core
 )
 
 # C++17 requirement

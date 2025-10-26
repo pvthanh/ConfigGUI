@@ -906,138 +906,136 @@
                   "type"
                 ]
               },
-              "examples": [
-                [
-                  {
-                    "name": "type",
-                    "type": "string"
-                  },
-                  {
-                    "name": "link id",
-                    "type": "integer",
-                    "minimum": 0
-                  },
-                  {
-                    "name": "latitude",
-                    "type": "float",
-                    "minimum": -90,
-                    "maximum": 90
-                  },
-                  {
-                    "name": "longitude",
-                    "type": "float",
-                    "minimum": -180,
-                    "maximum": 180
-                  },
-                  {
-                    "name": "node type",
-                    "type": "string",
-                    "allowEmpty": false,
-                    "enum": [
-                      "intersection",
-                      "termination of a link",
-                      "change of attribution",
-                      "shape point"
-                    ]
-                  },
-                  {
-                    "name": "z-level",
-                    "type": "string"
-                  },
-                  {
-                    "name": "aligned",
-                    "type": "boolean"
-                  },
-                  {
-                    "name": "street name",
-                    "type": "string"
-                  },
-                  {
-                    "name": "address range",
-                    "type": "string"
-                  },
-                  {
-                    "name": "address scheme",
-                    "type": "string",
-                    "allowEmpty": true,
-                    "enum": [
-                      "Even",
-                      "Odd",
-                      "Mixed"
-                    ]
-                  },
-                  {
-                    "name": "one-way",
-                    "type": "boolean"
-                  },
-                  {
-                    "name": "access characteristics",
-                    "type": "string"
-                  },
-                  {
-                    "name": "functional class",
-                    "type": "integer",
-                    "minimum": 1,
-                    "maximum": 5
-                  },
-                  {
-                    "name": "language code",
-                    "type": "string"
-                  },
-                  {
-                    "name": "country",
-                    "type": "string"
-                  },
-                  {
-                    "name": "postal code",
-                    "type": "string"
-                  },
-                  {
-                    "name": "cartography feature",
-                    "type": "string",
-                    "allowEmpty": false
-                  },
-                  {
-                    "name": "polygon formation",
-                    "type": "string",
-                    "allowEmpty": false
-                  },
-                  {
-                    "name": "poi category",
-                    "type": "string",
-                    "allowEmpty": false
-                  },
-                  {
-                    "name": "poi name",
-                    "type": "string"
-                  },
-                  {
-                    "name": "phone number",
-                    "type": "string",
-                    "allowEmpty": true,
-                    "pattern": "^\\+?[0-9 \\-/()]{3,}$"
-                  },
-                  {
-                    "name": "open 24 hours",
-                    "type": "boolean"
-                  },
-                  {
-                    "name": "parent/child poi",
-                    "type": "string"
-                  },
-                  {
-                    "name": "tollway",
-                    "type": "string"
-                  },
-                  {
-                    "name": "private",
-                    "type": "string"
-                  },
-                  {
-                    "name": "public_access",
-                    "type": "string"
-                  }
-                ]
+              "default": [
+                {
+                  "name": "type",
+                  "type": "string"
+                },
+                {
+                  "name": "link id",
+                  "type": "integer",
+                  "minimum": 0
+                },
+                {
+                  "name": "latitude",
+                  "type": "float",
+                  "minimum": -90,
+                  "maximum": 90
+                },
+                {
+                  "name": "longitude",
+                  "type": "float",
+                  "minimum": -180,
+                  "maximum": 180
+                },
+                {
+                  "name": "node type",
+                  "type": "string",
+                  "allowEmpty": false,
+                  "enum": [
+                    "intersection",
+                    "termination of a link",
+                    "change of attribution",
+                    "shape point"
+                  ]
+                },
+                {
+                  "name": "z-level",
+                  "type": "string"
+                },
+                {
+                  "name": "aligned",
+                  "type": "boolean"
+                },
+                {
+                  "name": "street name",
+                  "type": "string"
+                },
+                {
+                  "name": "address range",
+                  "type": "string"
+                },
+                {
+                  "name": "address scheme",
+                  "type": "string",
+                  "allowEmpty": true,
+                  "enum": [
+                    "Even",
+                    "Odd",
+                    "Mixed"
+                  ]
+                },
+                {
+                  "name": "one-way",
+                  "type": "boolean"
+                },
+                {
+                  "name": "access characteristics",
+                  "type": "string"
+                },
+                {
+                  "name": "functional class",
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 5
+                },
+                {
+                  "name": "language code",
+                  "type": "string"
+                },
+                {
+                  "name": "country",
+                  "type": "string"
+                },
+                {
+                  "name": "postal code",
+                  "type": "string"
+                },
+                {
+                  "name": "cartography feature",
+                  "type": "string",
+                  "allowEmpty": false
+                },
+                {
+                  "name": "polygon formation",
+                  "type": "string",
+                  "allowEmpty": false
+                },
+                {
+                  "name": "poi category",
+                  "type": "string",
+                  "allowEmpty": false
+                },
+                {
+                  "name": "poi name",
+                  "type": "string"
+                },
+                {
+                  "name": "phone number",
+                  "type": "string",
+                  "allowEmpty": true,
+                  "pattern": "^\\+?[0-9 \\-/()]{3,}$"
+                },
+                {
+                  "name": "open 24 hours",
+                  "type": "boolean"
+                },
+                {
+                  "name": "parent/child poi",
+                  "type": "string"
+                },
+                {
+                  "name": "tollway",
+                  "type": "string"
+                },
+                {
+                  "name": "private",
+                  "type": "string"
+                },
+                {
+                  "name": "public_access",
+                  "type": "string"
+                }
               ],
               "x-hint": "Define per-field validation rules"
             }

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>ConfigGUI - Configuration Manager</title>
+    <link rel="stylesheet" href="/main.css">
+    <style>
+        /* Inline critical styles to prevent FOUC */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Header Section -->
+        <header class="app-header">
+            <div class="header-content">
+                <h1>🎯 ConfigGUI</h1>
+                <p class="subtitle">Web-based Configuration Manager</p>
+            </div>
+            <div class="header-toolbar">
+                <!-- Status Indicators -->
+                <div class="header-status">
+                    <span id="connection-status" class="status-indicator online">● Online</span>
+                    <span id="server-info" class="server-info">v3.0</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="app-main">
+            <!-- Main Menu (Initial State) -->
+            <div id="main-menu-state" class="state-container hidden">
+                <div class="main-menu">
+                    <div class="menu-header">
+                        <h2>🔧 Configuration Manager</h2>
+                        <p class="menu-subtitle">Select an action to get started</p>
+                    </div>
+
+                    <div class="menu-actions">
+                        <!-- Load Schema Section -->
+                        <div class="action-section">
+                            <button class="btn btn-large btn-primary" id="load-schema-btn">
+                                <span class="btn-icon">📋</span>
+                                <span class="btn-text">Load Schema</span>
+                            </button>
+                            <p class="action-description">Choose a schema file to generate a configuration form</p>
+                        </div>
+                    </div>
+
+                    <!-- Info Box -->
+                    <div class="info-box">
+                        <p><strong>Tip:</strong> Load a schema first to create a new configuration. Once the form is generated, you can optionally load an existing configuration file to pre-fill values.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Schema Selector (After "Load Schema" clicked) -->
+            <div id="schema-selector-state" class="state-container hidden">
+                <div class="schema-selector">
+                    <div class="page-header">
+                        <button class="btn btn-back" id="back-from-schema-btn">← Back</button>
+                        <h2>📋 Select Configuration Schema</h2>
+                    </div>
+                    <p class="description">Choose a schema to generate the configuration form</p>
+                    
+                    <div class="file-selection-panel">
+                        <h3>Available Schemas</h3>
+                        <div id="schemas-list" class="schemas-grid">
+                            <!-- Populated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <div class="upload-section">
+                        <h3>Or Upload Custom Schema</h3>
+                        <div class="upload-area" id="upload-area">
+                            <div class="upload-icon">📤</div>
+                            <p>Drag & drop JSON/YAML schema here</p>
+                            <p class="or">or</p>
+                            <input type="file" id="schema-upload" accept=".json,.yaml,.yml" style="display: none;">
+                            <button class="btn btn-secondary" onclick="document.getElementById('schema-upload').click()">
+                                Browse Files
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Configuration Selector (After "Load Configuration" clicked) -->
+            <div id="config-selector-state" class="state-container hidden">
+                <div class="config-selector">
+                    <div class="page-header">
+                        <button class="btn btn-back" id="back-from-config-btn">← Back</button>
+                        <h2>📂 Load Configuration</h2>
+                    </div>
+                    <p class="description">Select an existing configuration file to load</p>
+
+                    <div class="file-selection-panel">
+                        <h3>Available Configurations</h3>
+                        <div id="configs-list" class="schemas-grid">
+                            <!-- Populated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <div class="upload-section">
+                        <h3>Or Upload Configuration File</h3>
+                        <div class="upload-area" id="upload-config-area">
+                            <div class="upload-icon">�</div>
+                            <p>Drag & drop configuration file here</p>
+                            <p class="or">or</p>
+                            <input type="file" id="config-upload" accept=".json,.yaml,.yml" style="display: none;">
+                            <button class="btn btn-secondary" onclick="document.getElementById('config-upload').click()">
+                                Browse Files
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Generator (After Schema Selection) -->
+            <div id="form-generator-state" class="state-container hidden">
+                <div class="form-container">
+                    <div class="form-header">
+                        <button class="btn btn-back" id="back-from-form-btn">← Back</button>
+                        <h2 id="form-title">Configuration Form</h2>
+                        <div class="form-header-actions">
+                            <button class="btn btn-icon" id="export-btn" title="Export Configuration">💾</button>
+                        </div>
+                    </div>
+
+                    <!-- Form Toolbar -->
+                    <div class="form-toolbar">
+                        <button class="btn btn-secondary" id="load-config-in-form-btn" title="Load existing configuration to pre-fill form">
+                            📂 Load Configuration
+                        </button>
+                    </div>
+
+                    <div id="form-content" class="form-content">
+                        <!-- Form will be generated here by JavaScript -->
+                    </div>
+
+                    <div class="form-actions">
+                        <button class="btn btn-secondary" id="reset-form-btn">Reset</button>
+                        <button class="btn btn-success" id="save-btn">💾 Save Configuration</button>
+                        <button class="btn btn-primary" id="submit-btn">Export Configuration</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Error State -->
+            <div id="error-state" class="state-container hidden">
+                <div class="error-container">
+                    <div class="error-icon">❌</div>
+                    <h2>Error</h2>
+                    <p id="error-message">An unexpected error occurred</p>
+                    <div class="error-actions">
+                        <button class="btn btn-secondary" onclick="window.location.reload()">Reload</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>&copy; 2025 ConfigGUI - Open Source Configuration Manager</p>
+            <p class="footer-links">
+                <a href="/health" target="_blank">Health Check</a> |
+                <a href="/api/schemas" target="_blank">API</a>
+            </p>
+        </footer>
+    </div>
+
+    <!-- Modal Dialog for Loading Configuration (without leaving form) -->
+    <div id="config-modal" class="modal hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📂 Load Configuration</h2>
+                <button class="modal-close" id="config-modal-close">✕</button>
+            </div>
+            <div class="modal-body">
+                <p class="description">Select an existing configuration to pre-fill this form</p>
+                <div id="modal-configs-list" class="schemas-grid">
+                    <!-- Populated by JavaScript -->
+                </div>
+                <div class="modal-upload-section">
+                    <h3>Or Upload Configuration File</h3>
+                    <div class="upload-area" id="upload-config-modal-area">
+                        <div class="upload-icon">📁</div>
+                        <p>Drag & drop configuration file here</p>
+                        <p class="or">or</p>
+                        <input type="file" id="config-upload-modal" accept=".json,.yaml,.yml" style="display: none;">
+                        <button class="btn btn-secondary" onclick="document.getElementById('config-upload-modal').click()">
+                            Browse Files
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Main JavaScript -->
+    <script src="/main.js"></script>
+</body>
+</html>

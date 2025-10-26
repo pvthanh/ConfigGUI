@@ -452,6 +452,82 @@ curl https://github.com/yhirose/cpp-httplib/releases/download/v0.14.0/httplib.h 
 
 **Problem**: Real-time validation too slow
 ```javascript
+---
+
+## Deployment Options
+
+### Standalone Deployment
+
+Run the compiled HTML server directly:
+
+```bash
+# Build HTML server
+cmake -B build -DBUILD_QT_APP=OFF -DBUILD_HTML_SERVER=ON
+cmake --build build
+
+# Create resources
+mkdir -p resources/{schemas,configs}
+cp /path/to/schemas/*.json resources/schemas/
+
+# Run server
+./build/src/html/ConfigGUIServer --port 8080 --host 0.0.0.0
+```
+
+**Access**: Open browser to `http://localhost:8080`
+
+### Docker Deployment
+
+Deploy in a containerized environment:
+
+```bash
+# Build Docker image
+docker build -f Dockerfile.html -t configgui-html:3.0 .
+
+# Run container
+docker run -p 8080:8080 configgui-html:3.0
+
+# Verify health
+curl http://localhost:8080/health
+```
+
+### Kubernetes Deployment
+
+For production-scale deployments:
+
+```bash
+# Apply Kubernetes manifest
+kubectl apply -f k8s/configgui-deployment.yaml
+
+# Verify
+kubectl get pods -l app=configgui
+
+# Port forward
+kubectl port-forward svc/configgui-html 8080:80
+```
+
+**See**: `DEPLOYMENT.md` for complete deployment guide
+
+---
+
+## Production Checklist
+
+Before deploying to production:
+
+- [ ] Build with `-DCMAKE_BUILD_TYPE=Release`
+- [ ] Run all unit tests (see Test section above)
+- [ ] Verify health endpoint: `curl http://localhost:8080/health`
+- [ ] Test with your schemas: `curl http://localhost:8080/api/schemas`
+- [ ] Configure schema directory with real schemas
+- [ ] Set resource limits (Docker/Kubernetes)
+- [ ] Enable monitoring/logging
+- [ ] Document deployment steps for your environment
+
+---
+
+## Validation Issues
+
+**Problem**: Real-time validation too slow
+```javascript
 // Solution: Add debounce in form-generator.js
 function debounce(func, delay) {
     let timeout;
@@ -462,6 +538,11 @@ function debounce(func, delay) {
 }
 
 field.addEventListener('change', debounce(validateField, 200));
+```
+
+---
+
+## Next Steps
 ```
 
 ---

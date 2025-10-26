@@ -180,10 +180,10 @@ description: "Task breakdown for HTML Form Generation feature implementation"
 
 ### Schema Listing Endpoint
 
-- [ ] T066 [US1] Create schema_service.h for schema discovery in /src/html/handlers/schema_service.h
-- [ ] T067 [US1] Implement schema_service.cpp to scan resources/schemas/ directory in /src/html/handlers/schema_service.cpp
-- [ ] T068 [US1] Implement GET /api/schemas endpoint in /src/html/handlers/request_handler.cpp
-- [ ] T069 [US1] Add unit test for schema discovery in /tests/unit/html/test_schema_service.cpp
+- [x] T066 [US1] Create schema_service.h for schema discovery in /src/html/handlers/schema_service.h
+- [x] T067 [US1] Implement schema_service.cpp to scan resources/schemas/ directory in /src/html/handlers/schema_service.cpp
+- [x] T068 [US1] Implement GET /api/schemas endpoint in /src/html/handlers/request_handler.cpp
+- [x] T069 [US1] Add unit test for schema discovery in /tests/unit/html/test_schema_service.cpp
 
 ### Main Form (HTML)
 
