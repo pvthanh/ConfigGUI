@@ -25,37 +25,37 @@ TEST_F(ConfigurationDataTest, CreateEmptyConfigurationData) {
     ConfigurationData config;
     
     EXPECT_EQ(config.size(), 0);
-    EXPECT_TRUE(config.isEmpty());
+    EXPECT_TRUE(config.is_empty());
 }
 
 // Test: Set and get configuration value
 TEST_F(ConfigurationDataTest, SetAndGetValue) {
     ConfigurationData config;
     
-    config.setValue("name", "John");
+    config.set_value("name", "John");
     
-    EXPECT_EQ(config.getValue("name"), "John");
+    EXPECT_EQ(config.get_value("name"), "John");
 }
 
 // Test: Set multiple values
 TEST_F(ConfigurationDataTest, SetMultipleValues) {
     ConfigurationData config;
     
-    config.setValue("name", "John");
-    config.setValue("email", "john@example.com");
-    config.setValue("age", 30);
+    config.set_value("name", "John");
+    config.set_value("email", "john@example.com");
+    config.set_value("age", 30);
     
     EXPECT_EQ(config.size(), 3);
-    EXPECT_EQ(config.getValue("name"), "John");
-    EXPECT_EQ(config.getValue("email"), "john@example.com");
-    EXPECT_EQ(config.getValue("age"), 30);
+    EXPECT_EQ(config.get_value("name"), "John");
+    EXPECT_EQ(config.get_value("email"), "john@example.com");
+    EXPECT_EQ(config.get_value("age"), 30);
 }
 
 // Test: Get non-existent value returns null
 TEST_F(ConfigurationDataTest, GetNonExistentValueReturnsNull) {
     ConfigurationData config;
     
-    auto value = config.getValue("nonexistent");
+    auto value = config.get_value("nonexistent");
     EXPECT_TRUE(value.is_null());
 }
 
@@ -63,59 +63,59 @@ TEST_F(ConfigurationDataTest, GetNonExistentValueReturnsNull) {
 TEST_F(ConfigurationDataTest, UpdateExistingValue) {
     ConfigurationData config;
     
-    config.setValue("status", "active");
-    EXPECT_EQ(config.getValue("status"), "active");
+    config.set_value("status", "active");
+    EXPECT_EQ(config.get_value("status"), "active");
     
-    config.setValue("status", "inactive");
-    EXPECT_EQ(config.getValue("status"), "inactive");
+    config.set_value("status", "inactive");
+    EXPECT_EQ(config.get_value("status"), "inactive");
 }
 
 // Test: Remove value
 TEST_F(ConfigurationDataTest, RemoveValue) {
     ConfigurationData config;
     
-    config.setValue("temporary", "value");
-    EXPECT_FALSE(config.getValue("temporary").is_null());
+    config.set_value("temporary", "value");
+    EXPECT_FALSE(config.get_value("temporary").is_null());
     
-    config.removeValue("temporary");
-    EXPECT_TRUE(config.getValue("temporary").is_null());
+    config.remove_value("temporary");
+    EXPECT_TRUE(config.get_value("temporary").is_null());
 }
 
 // Test: Clear all values
 TEST_F(ConfigurationDataTest, ClearAllValues) {
     ConfigurationData config;
     
-    config.setValue("key1", "value1");
-    config.setValue("key2", "value2");
-    config.setValue("key3", "value3");
+    config.set_value("key1", "value1");
+    config.set_value("key2", "value2");
+    config.set_value("key3", "value3");
     
     EXPECT_EQ(config.size(), 3);
     
     config.clear();
     
     EXPECT_EQ(config.size(), 0);
-    EXPECT_TRUE(config.isEmpty());
+    EXPECT_TRUE(config.is_empty());
 }
 
 // Test: Check if key exists
 TEST_F(ConfigurationDataTest, CheckIfKeyExists) {
     ConfigurationData config;
     
-    config.setValue("existing", "value");
+    config.set_value("existing", "value");
     
-    EXPECT_TRUE(config.hasKey("existing"));
-    EXPECT_FALSE(config.hasKey("nonexistent"));
+    EXPECT_TRUE(config.has_key("existing"));
+    EXPECT_FALSE(config.has_key("nonexistent"));
 }
 
 // Test: Get all keys
 TEST_F(ConfigurationDataTest, GetAllKeys) {
     ConfigurationData config;
     
-    config.setValue("alpha", "a");
-    config.setValue("beta", "b");
-    config.setValue("gamma", "c");
+    config.set_value("alpha", "a");
+    config.set_value("beta", "b");
+    config.set_value("gamma", "c");
     
-    auto keys = config.getKeys();
+    auto keys = config.get_keys();
     EXPECT_EQ(keys.size(), 3);
     EXPECT_TRUE(std::find(keys.begin(), keys.end(), "alpha") != keys.end());
     EXPECT_TRUE(std::find(keys.begin(), keys.end(), "beta") != keys.end());
@@ -134,9 +134,9 @@ TEST_F(ConfigurationDataTest, StoreNestedObjects) {
         }}
     };
     
-    config.setValue("user", user);
+    config.set_value("user", user);
     
-    auto retrieved = config.getValue("user");
+    auto retrieved = config.get_value("user");
     EXPECT_EQ(retrieved["name"], "John");
     EXPECT_EQ(retrieved["preferences"]["theme"], "dark");
 }
@@ -146,9 +146,9 @@ TEST_F(ConfigurationDataTest, StoreArrays) {
     ConfigurationData config;
     
     json tags = {"python", "cpp", "web"};
-    config.setValue("tags", tags);
+    config.set_value("tags", tags);
     
-    auto retrieved = config.getValue("tags");
+    auto retrieved = config.get_value("tags");
     EXPECT_EQ(retrieved.size(), 3);
     EXPECT_EQ(retrieved[0], "python");
 }
@@ -157,38 +157,38 @@ TEST_F(ConfigurationDataTest, StoreArrays) {
 TEST_F(ConfigurationDataTest, StoreVariousDataTypes) {
     ConfigurationData config;
     
-    config.setValue("string", "text");
-    config.setValue("integer", 42);
-    config.setValue("float", 3.14);
-    config.setValue("boolean", true);
-    config.setValue("null", nullptr);
+    config.set_value("string", "text");
+    config.set_value("integer", 42);
+    config.set_value("float", 3.14);
+    config.set_value("boolean", true);
+    config.set_value("null", nullptr);
     
-    EXPECT_EQ(config.getValue("string"), "text");
-    EXPECT_EQ(config.getValue("integer"), 42);
-    EXPECT_DOUBLE_EQ(config.getValue("float"), 3.14);
-    EXPECT_EQ(config.getValue("boolean"), true);
-    EXPECT_TRUE(config.getValue("null").is_null());
+    EXPECT_EQ(config.get_value("string"), "text");
+    EXPECT_EQ(config.get_value("integer"), 42);
+    EXPECT_DOUBLE_EQ(config.get_value("float"), 3.14);
+    EXPECT_EQ(config.get_value("boolean"), true);
+    EXPECT_TRUE(config.get_value("null").is_null());
 }
 
 // Test: Clone configuration data
 TEST_F(ConfigurationDataTest, CloneConfigurationData) {
     ConfigurationData original;
-    original.setValue("key1", "value1");
-    original.setValue("key2", "value2");
+    original.set_value("key1", "value1");
+    original.set_value("key2", "value2");
     
     ConfigurationData cloned = original;
     
-    EXPECT_EQ(cloned.getValue("key1"), "value1");
-    EXPECT_EQ(cloned.getValue("key2"), "value2");
+    EXPECT_EQ(cloned.get_value("key1"), "value1");
+    EXPECT_EQ(cloned.get_value("key2"), "value2");
 }
 
 // Test: Export to JSON
 TEST_F(ConfigurationDataTest, ExportToJson) {
     ConfigurationData config;
     
-    config.setValue("name", "Alice");
-    config.setValue("age", 28);
-    config.setValue("active", true);
+    config.set_value("name", "Alice");
+    config.set_value("age", 28);
+    config.set_value("active", true);
     
     json exported = config.toJson();
     
@@ -210,43 +210,43 @@ TEST_F(ConfigurationDataTest, ImportFromJson) {
     ConfigurationData config;
     config.fromJson(data);
     
-    EXPECT_EQ(config.getValue("name"), "Bob");
-    EXPECT_EQ(config.getValue("email"), "bob@example.com");
-    EXPECT_EQ(config.getValue("settings")["theme"], "light");
+    EXPECT_EQ(config.get_value("name"), "Bob");
+    EXPECT_EQ(config.get_value("email"), "bob@example.com");
+    EXPECT_EQ(config.get_value("settings")["theme"], "light");
 }
 
 // Test: Round-trip JSON conversion
 TEST_F(ConfigurationDataTest, RoundTripJsonConversion) {
     ConfigurationData original;
-    original.setValue("key1", "value1");
-    original.setValue("key2", 42);
-    original.setValue("key3", true);
+    original.set_value("key1", "value1");
+    original.set_value("key2", 42);
+    original.set_value("key3", true);
     
     json exported = original.toJson();
     
     ConfigurationData restored;
     restored.fromJson(exported);
     
-    EXPECT_EQ(restored.getValue("key1"), "value1");
-    EXPECT_EQ(restored.getValue("key2"), 42);
-    EXPECT_EQ(restored.getValue("key3"), true);
+    EXPECT_EQ(restored.get_value("key1"), "value1");
+    EXPECT_EQ(restored.get_value("key2"), 42);
+    EXPECT_EQ(restored.get_value("key3"), true);
 }
 
 // Test: Merge two configurations
 TEST_F(ConfigurationDataTest, MergeTwoConfigurations) {
     ConfigurationData config1;
-    config1.setValue("key1", "value1");
-    config1.setValue("key2", "value2");
+    config1.set_value("key1", "value1");
+    config1.set_value("key2", "value2");
     
     ConfigurationData config2;
-    config2.setValue("key2", "value2_override");
-    config2.setValue("key3", "value3");
+    config2.set_value("key2", "value2_override");
+    config2.set_value("key3", "value3");
     
     config1.merge(config2);
     
-    EXPECT_EQ(config1.getValue("key1"), "value1");
-    EXPECT_EQ(config1.getValue("key2"), "value2_override");
-    EXPECT_EQ(config1.getValue("key3"), "value3");
+    EXPECT_EQ(config1.get_value("key1"), "value1");
+    EXPECT_EQ(config1.get_value("key2"), "value2_override");
+    EXPECT_EQ(config1.get_value("key3"), "value3");
 }
 
 // Test: Get configuration size
@@ -255,10 +255,10 @@ TEST_F(ConfigurationDataTest, GetConfigurationSize) {
     
     EXPECT_EQ(config.size(), 0);
     
-    config.setValue("key1", "value1");
+    config.set_value("key1", "value1");
     EXPECT_EQ(config.size(), 1);
     
-    config.setValue("key2", "value2");
+    config.set_value("key2", "value2");
     EXPECT_EQ(config.size(), 2);
 }
 
@@ -266,7 +266,7 @@ TEST_F(ConfigurationDataTest, GetConfigurationSize) {
 TEST_F(ConfigurationDataTest, FormStateInitialization) {
     FormState form_state;
     
-    EXPECT_TRUE(form_state.isClean());
+    EXPECT_TRUE(form_state.is_clean());
     EXPECT_FALSE(form_state.isDirty());
 }
 
@@ -274,7 +274,7 @@ TEST_F(ConfigurationDataTest, FormStateInitialization) {
 TEST_F(ConfigurationDataTest, TrackFormFieldChanges) {
     FormState form_state;
     
-    form_state.markFieldDirty("name");
+    form_state.mark_field_dirty("name");
     
     EXPECT_TRUE(form_state.isDirty());
     EXPECT_TRUE(form_state.isFieldDirty("name"));
@@ -295,9 +295,9 @@ TEST_F(ConfigurationDataTest, TrackValidationState) {
 TEST_F(ConfigurationDataTest, TrackValidationErrors) {
     FormState form_state;
     
-    form_state.setFieldError("email", "Invalid email format");
+    form_state.set_field_error("email", "Invalid email format");
     
-    EXPECT_TRUE(form_state.hasFieldError("email"));
+    EXPECT_TRUE(form_state.has_field_error("email"));
     EXPECT_EQ(form_state.getFieldError("email"), "Invalid email format");
 }
 
@@ -305,10 +305,10 @@ TEST_F(ConfigurationDataTest, TrackValidationErrors) {
 TEST_F(ConfigurationDataTest, ClearFieldDirtyFlag) {
     FormState form_state;
     
-    form_state.markFieldDirty("name");
+    form_state.mark_field_dirty("name");
     EXPECT_TRUE(form_state.isDirty());
     
-    form_state.markFieldClean("name");
+    form_state.mark_field_clean("name");
     // Should only be clean if all fields are clean
 }
 
@@ -316,11 +316,11 @@ TEST_F(ConfigurationDataTest, ClearFieldDirtyFlag) {
 TEST_F(ConfigurationDataTest, GetAllDirtyFields) {
     FormState form_state;
     
-    form_state.markFieldDirty("name");
-    form_state.markFieldDirty("email");
-    form_state.markFieldDirty("age");
+    form_state.mark_field_dirty("name");
+    form_state.mark_field_dirty("email");
+    form_state.mark_field_dirty("age");
     
-    auto dirty_fields = form_state.getDirtyFields();
+    auto dirty_fields = form_state.get_dirty_fields();
     EXPECT_EQ(dirty_fields.size(), 3);
 }
 
@@ -328,22 +328,22 @@ TEST_F(ConfigurationDataTest, GetAllDirtyFields) {
 TEST_F(ConfigurationDataTest, ResetFormState) {
     FormState form_state;
     
-    form_state.markFieldDirty("name");
-    form_state.setFieldError("email", "Error");
+    form_state.mark_field_dirty("name");
+    form_state.set_field_error("email", "Error");
     
     form_state.reset();
     
-    EXPECT_TRUE(form_state.isClean());
-    EXPECT_FALSE(form_state.hasFieldError("email"));
+    EXPECT_TRUE(form_state.is_clean());
+    EXPECT_FALSE(form_state.has_field_error("email"));
 }
 
 // Test: Handle null values in configuration
 TEST_F(ConfigurationDataTest, HandleNullValuesInConfiguration) {
     ConfigurationData config;
     
-    config.setValue("null_field", nullptr);
+    config.set_value("null_field", nullptr);
     
-    auto value = config.getValue("null_field");
+    auto value = config.get_value("null_field");
     EXPECT_TRUE(value.is_null());
 }
 
@@ -352,42 +352,42 @@ TEST_F(ConfigurationDataTest, StoreLargeConfiguration) {
     ConfigurationData config;
     
     for (int i = 0; i < 1000; ++i) {
-        config.setValue("field_" + std::to_string(i), "value_" + std::to_string(i));
+        config.set_value("field_" + std::to_string(i), "value_" + std::to_string(i));
     }
     
     EXPECT_EQ(config.size(), 1000);
-    EXPECT_EQ(config.getValue("field_500"), "value_500");
+    EXPECT_EQ(config.get_value("field_500"), "value_500");
 }
 
 // Test: Field existence check with empty configuration
 TEST_F(ConfigurationDataTest, FieldExistenceCheckEmptyConfig) {
     ConfigurationData config;
     
-    EXPECT_FALSE(config.hasKey("any_key"));
+    EXPECT_FALSE(config.has_key("any_key"));
 }
 
 // Test: Store configuration with special characters
 TEST_F(ConfigurationDataTest, StoreConfigurationWithSpecialCharacters) {
     ConfigurationData config;
     
-    config.setValue("key_with_special", "value with spaces & symbols!");
-    config.setValue("unicode_key", "François - 北京 - 😀");
+    config.set_value("key_with_special", "value with spaces & symbols!");
+    config.set_value("unicode_key", "François - 北京 - 😀");
     
-    EXPECT_EQ(config.getValue("key_with_special"), "value with spaces & symbols!");
-    EXPECT_EQ(config.getValue("unicode_key"), "François - 北京 - 😀");
+    EXPECT_EQ(config.get_value("key_with_special"), "value with spaces & symbols!");
+    EXPECT_EQ(config.get_value("unicode_key"), "François - 北京 - 😀");
 }
 
 // Test: Get fields with certain prefix
 TEST_F(ConfigurationDataTest, GetFieldsWithPrefix) {
     ConfigurationData config;
     
-    config.setValue("app_name", "MyApp");
-    config.setValue("app_version", "1.0");
-    config.setValue("db_host", "localhost");
-    config.setValue("db_port", 5432);
+    config.set_value("app_name", "MyApp");
+    config.set_value("app_version", "1.0");
+    config.set_value("db_host", "localhost");
+    config.set_value("db_port", 5432);
     
-    auto keys = config.getKeys();
-    auto app_keys = config.getKeysByPrefix("app_");
+    auto keys = config.get_keys();
+    auto app_keys = config.get_keys_by_prefix("app_");
     
     // Should contain app_name and app_version
     EXPECT_GE(app_keys.size(), 0);

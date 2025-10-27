@@ -10,7 +10,7 @@
 
 using json = nlohmann::ordered_json;
 using configgui::core::Result;
-using YamlResult = configgui::core::Result<nlohmann::json, std::string>;
+using YamlResult = configgui::core::Result<nlohmann::ordered_json, std::string>;
 
 // Use an error wrapper to avoid ambiguity when T and E are the same type
 struct Error { std::string message; };

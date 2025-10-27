@@ -951,37 +951,486 @@ async function saveConfiguration() {
         // Gather form data with nested structure preserved
         const formData = gatherFormData();
         
-        // Create payload - just the data (no schema or timestamp wrapper)
-        const payload = formData;
-        
-        // Check if a configuration file was previously loaded
-        if (AppState.loadedConfigFile) {
-            // Config was loaded - ask user: overwrite or save as new?
-            showConfirmationDialog(
-                'Configuration Already Loaded',
-                `A configuration file was loaded: "${AppState.loadedConfigFilename}"\n\nDo you want to overwrite the existing file or save to a new location?`,
-                [
-                    {
-                        label: 'Overwrite Existing',
-                        action: () => saveConfigToServer(payload, AppState.loadedConfigFile, true)
-                    },
-                    {
-                        label: 'Save as New',
-                        action: () => saveConfigWithFileDialog(payload, false)
-                    },
-                    {
-                        label: 'Cancel',
-                        action: () => console.log('[CONFIG] Save cancelled')
-                    }
-                ]
-            );
-        } else {
-            // No config loaded - show file save dialog
-            saveConfigWithFileDialog(payload, false);
-        }
+        // Show filename input dialog
+        showFilenameInputDialog(formData);
         
     } catch (error) {
         showError('Failed to save configuration: ' + error.message);
+    }
+}
+
+/**
+ * Show dialog to ask user for filename
+ * @param {Object} formData - Configuration data to save
+ */
+function showFilenameInputDialog(formData) {
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+    `;
+    
+    const dialog = document.createElement('div');
+    dialog.style.cssText = `
+        background: white;
+        border-radius: 8px;
+        padding: 24px;
+        max-width: 500px;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    `;
+    
+    // Title
+    const titleEl = document.createElement('h2');
+    titleEl.style.cssText = 'margin: 0 0 12px 0; font-size: 1.25rem; color: #2d3748;';
+    titleEl.textContent = 'Save Configuration';
+    dialog.appendChild(titleEl);
+    
+    // Message
+    const messageEl = document.createElement('p');
+    messageEl.style.cssText = 'margin: 0 0 16px 0; color: #718096; font-size: 0.95rem;';
+    messageEl.textContent = 'Enter a name for this configuration file (without extension):';
+    dialog.appendChild(messageEl);
+    
+    // Input field
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = 'e.g., my-config';
+    input.style.cssText = `
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #e2e8f0;
+        border-radius: 4px;
+        font-size: 1rem;
+        margin-bottom: 20px;
+        box-sizing: border-box;
+    `;
+    
+    // Generate default name
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+    input.value = `config_${timestamp}`;
+    input.select(); // Auto-select for easy replacement
+    
+    dialog.appendChild(input);
+    
+    // Button container
+    const buttonContainer = document.createElement('div');
+    buttonContainer.style.cssText = 'display: flex; gap: 8px; justify-content: flex-end;';
+    
+    // Cancel button
+    const cancelBtn = document.createElement('button');
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.style.cssText = `
+        padding: 10px 16px;
+        background: #e2e8f0;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.95rem;
+        color: #2d3748;
+        transition: background 0.2s;
+    `;
+    cancelBtn.onmouseover = () => cancelBtn.style.background = '#cbd5e0';
+    cancelBtn.onmouseout = () => cancelBtn.style.background = '#e2e8f0';
+    cancelBtn.onclick = () => {
+        document.body.removeChild(modal);
+    };
+    
+    // Save button
+    const saveBtn = document.createElement('button');
+    saveBtn.textContent = 'Save';
+    saveBtn.style.cssText = `
+        padding: 10px 16px;
+        background: #48bb78;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.95rem;
+        color: white;
+        transition: background 0.2s;
+    `;
+    saveBtn.onmouseover = () => saveBtn.style.background = '#38a169';
+    saveBtn.onmouseout = () => saveBtn.style.background = '#48bb78';
+    saveBtn.onclick = async () => {
+        const filename = input.value.trim();
+        if (!filename) {
+            alert('Please enter a filename');
+            return;
+        }
+        
+        // Validate filename (alphanumeric, dash, underscore only)
+        if (!/^[a-zA-Z0-9_\-]+$/.test(filename)) {
+            alert('Filename can only contain letters, numbers, dashes, and underscores');
+            return;
+        }
+        
+        document.body.removeChild(modal);
+        
+        // Add .json extension
+        const fullFilename = `${filename}.json`;
+        
+        // Start hybrid save
+        await saveConfigurationHybrid(formData, fullFilename);
+    };
+    
+    buttonContainer.appendChild(cancelBtn);
+    buttonContainer.appendChild(saveBtn);
+    dialog.appendChild(buttonContainer);
+    
+    modal.appendChild(dialog);
+    document.body.appendChild(modal);
+    
+    // Focus on input for immediate typing
+    input.focus();
+    
+    // Allow Enter key to submit
+    input.onkeypress = (e) => {
+        if (e.key === 'Enter') {
+            saveBtn.click();
+        }
+    };
+}
+
+/**
+ * HYBRID STORAGE: Save configuration to both local PC and server simultaneously
+ * @param {Object} formData - Configuration data to save
+ * @param {string} defaultFilename - Default filename for saving
+ */
+async function saveConfigurationHybrid(formData, defaultFilename) {
+    try {
+        console.log('[HYBRID] Starting hybrid save (local + server)');
+        
+        let localSaved = false;
+        let serverSaved = false;
+        let errors = [];
+        
+        // Save to LOCAL PC (File System Access API with user file picker)
+        if ('showSaveFilePicker' in window) {
+            try {
+                console.log('[HYBRID] Saving to local PC with file picker...');
+                await saveToLocalPC(formData, defaultFilename);
+                localSaved = true;
+                console.log('[HYBRID] Local save successful');
+            } catch (error) {
+                if (error.name !== 'AbortError') {
+                    console.error('[HYBRID] Local save error:', error);
+                    errors.push(`Local save: ${error.message}`);
+                }
+            }
+        } else {
+            // Fallback: auto-download
+            try {
+                console.log('[HYBRID] File System API not available - using auto-download...');
+                downloadConfigurationFile(formData, defaultFilename);
+                localSaved = true;
+                console.log('[HYBRID] Auto-download successful');
+            } catch (error) {
+                console.error('[HYBRID] Download error:', error);
+                errors.push(`Download: ${error.message}`);
+            }
+        }
+        
+        // Save to SERVER (simultaneously)
+        try {
+            console.log('[HYBRID] Saving to server...');
+            const filename = localSaved ? defaultFilename : 
+                           `config_${new Date().getTime()}.json`;
+            await saveToServerBackup(formData, filename);
+            serverSaved = true;
+            console.log('[HYBRID] Server save successful');
+        } catch (error) {
+            console.error('[HYBRID] Server save error:', error);
+            errors.push(`Server save: ${error.message}`);
+        }
+        
+        // Show unified result message
+        if (localSaved && serverSaved) {
+            showToast('success', 'Save Successful', 
+                '✅ Saved to your computer and backed up on server');
+            console.log('[HYBRID] Both local and server saves completed successfully');
+        } else if (localSaved) {
+            showToast('warning', 'Partial Save', 
+                '✅ Saved to your computer\n⚠️ Server backup failed - check server connection');
+        } else if (serverSaved) {
+            showToast('warning', 'Partial Save', 
+                '⚠️ Local save cancelled\n✅ Backup saved on server');
+        } else {
+            showError('Save Failed: ' + errors.join('; '));
+        }
+        
+        // Refresh server file list
+        try {
+            await loadServerFiles();
+        } catch (error) {
+            console.warn('[HYBRID] Could not refresh server file list:', error);
+        }
+        
+    } catch (error) {
+        console.error('[HYBRID] Hybrid save error:', error);
+        showError('Hybrid save failed: ' + error.message);
+    }
+}
+
+/**
+ * Save configuration to LOCAL PC using File System Access API
+ * User chooses save location via file picker
+ */
+async function saveToLocalPC(formData, defaultFilename) {
+    return new Promise(async (resolve, reject) => {
+        try {
+            console.log('[LOCAL] Saving to local PC:', defaultFilename);
+            
+            // Show file picker dialog
+            const fileHandle = await window.showSaveFilePicker({
+                suggestedName: defaultFilename,
+                types: [
+                    {
+                        description: 'JSON Configuration Files',
+                        accept: { 'application/json': ['.json'] }
+                    }
+                ],
+                startIn: 'documents' // Try to start in Documents folder
+            });
+            
+            console.log('[LOCAL] File picker confirmed:', fileHandle.name);
+            
+            // Write file
+            const writable = await fileHandle.createWritable();
+            const jsonString = JSON.stringify(formData, null, 2);
+            
+            await writable.write(jsonString);
+            await writable.close();
+            
+            console.log('[LOCAL] File saved successfully to:', fileHandle.name);
+            resolve({
+                name: fileHandle.name,
+                path: fileHandle.name
+            });
+            
+        } catch (error) {
+            if (error.name === 'AbortError') {
+                console.log('[LOCAL] User cancelled file picker');
+                reject(new Error('File picker cancelled by user'));
+            } else {
+                console.error('[LOCAL] Error:', error);
+                reject(error);
+            }
+        }
+    });
+}
+
+/**
+ * Download configuration file (fallback for browsers without File System Access API)
+ */
+function downloadConfigurationFile(formData, filename) {
+    try {
+        console.log('[LOCAL] Downloading configuration:', filename);
+        
+        const jsonString = JSON.stringify(formData, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        
+        // Create and trigger download
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        
+        // Cleanup
+        setTimeout(() => {
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }, 100);
+        
+        console.log('[LOCAL] Download started:', filename);
+        
+    } catch (error) {
+        console.error('[LOCAL] Download error:', error);
+        throw error;
+    }
+}
+
+/**
+ * Save configuration to SERVER as backup
+ */
+async function saveToServerBackup(formData, filename) {
+    try {
+        console.log('[SERVER] Saving backup to server:', filename);
+        
+        const response = await fetch('/api/config/save', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                filename: filename,
+                data: formData
+            })
+        });
+        
+        if (!response.ok) {
+            const result = await response.json();
+            throw new Error(result.error || 'Server save failed');
+        }
+        
+        const result = await response.json();
+        console.log('[SERVER] Backup saved successfully:', result.path);
+        
+        return result;
+        
+    } catch (error) {
+        console.error('[SERVER] Backup save error:', error);
+        throw error;
+    }
+}
+
+/**
+ * Load list of configurations from server
+ */
+async function loadServerFiles() {
+    try {
+        console.log('[SERVER] Loading file list from server...');
+        
+        const response = await fetch('/api/config/list');
+        if (!response.ok) {
+            throw new Error('Failed to load file list');
+        }
+        
+        const result = await response.json();
+        console.log('[SERVER] Found', result.count, 'files on server');
+        
+        // Display file list in UI
+        displayServerFileList(result.files);
+        
+        return result.files;
+        
+    } catch (error) {
+        console.error('[SERVER] Error loading file list:', error);
+        throw error;
+    }
+}
+
+/**
+ * Display server file list in UI
+ */
+function displayServerFileList(files) {
+    try {
+        let html = '<h4>📊 Saved Configurations on Server</h4>';
+        
+        if (!files || files.length === 0) {
+            html += '<p>No configurations saved on server yet</p>';
+        } else {
+            html += '<div class="server-files-list">';
+            files.forEach(file => {
+                // Extract filename from file object
+                const filename = (typeof file === 'string') ? file : (file.filename || file.name || file);
+                const size = file.size ? `(${(file.size / 1024).toFixed(1)}KB)` : '';
+                
+                html += `
+                    <div class="server-file-item">
+                        <span class="file-name">${escapeHtml(filename)} ${size}</span>
+                        <div class="file-actions">
+                            <button class="btn-small" onclick="downloadFromServer('${filename.replace(/'/g, "\\'")}')" 
+                                    title="Download">📥</button>
+                            <button class="btn-small btn-danger" onclick="deleteFromServer('${filename.replace(/'/g, "\\'")}')" 
+                                    title="Delete">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+        }
+        
+        // Update or create file list container
+        let container = document.getElementById('server-file-list');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'server-file-list';
+            container.className = 'server-files-section';
+            document.querySelector('.form-content')?.parentElement.appendChild(container);
+        }
+        
+        container.innerHTML = html;
+        container.style.display = 'block';
+        
+    } catch (error) {
+        console.error('[SERVER] Error displaying file list:', error);
+    }
+}
+
+/**
+ * Download configuration from server
+ */
+async function downloadFromServer(filename) {
+    try {
+        console.log('[SERVER] Downloading from server:', filename);
+        
+        const response = await fetch(`/api/config/download/${encodeURIComponent(filename)}`);
+        if (!response.ok) {
+            throw new Error('Download failed');
+        }
+        
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        
+        setTimeout(() => {
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }, 100);
+        
+        showToast('success', 'Downloaded', `Downloaded: ${filename}`);
+        console.log('[SERVER] Downloaded successfully');
+        
+    } catch (error) {
+        console.error('[SERVER] Download error:', error);
+        showError('Failed to download: ' + error.message);
+    }
+}
+
+/**
+ * Delete configuration from server
+ */
+async function deleteFromServer(filename) {
+    if (!confirm(`Delete "${filename}" from server?`)) {
+        return;
+    }
+    
+    try {
+        console.log('[SERVER] Deleting from server:', filename);
+        
+        const response = await fetch(`/api/config/${encodeURIComponent(filename)}`, {
+            method: 'DELETE'
+        });
+        
+        if (!response.ok) {
+            const result = await response.json();
+            throw new Error(result.error || 'Delete failed');
+        }
+        
+        showToast('success', 'Deleted', `Removed: ${filename}`);
+        console.log('[SERVER] Deleted successfully');
+        
+        // Refresh file list
+        await loadServerFiles();
+        
+    } catch (error) {
+        console.error('[SERVER] Delete error:', error);
+        showError('Failed to delete: ' + error.message);
     }
 }
 
@@ -2097,12 +2546,6 @@ function setupEventListeners() {
         uploadConfigModalArea.addEventListener('drop', handleConfigFileDropModal);
     }
     
-    // Form Export button
-    const exportBtn = document.getElementById('export-btn');
-    if (exportBtn) {
-        exportBtn.addEventListener('click', handleExport);
-    }
-    
     // Form Reset button
     const resetBtn = document.getElementById('reset-form-btn');
     if (resetBtn) {
@@ -2379,30 +2822,6 @@ function handleConfigFileUploadModal(e) {
     };
     
     reader.readAsText(file);
-}
-
-function handleExport() {
-    try {
-        // Gather form data with nested structure preserved
-        const formData = gatherFormData();
-        
-        // Create download with just the data (no schema or timestamp)
-        const jsonString = JSON.stringify(formData, null, 2);
-        const blob = new Blob([jsonString], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `config-${Date.now()}.json`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-        
-        showToast('success', 'Exported', 'Configuration exported as JSON');
-    } catch (error) {
-        console.error('Export error:', error);
-        showToast('error', 'Export Failed', 'Failed to export configuration');
-    }
 }
 
 // ============================================================================

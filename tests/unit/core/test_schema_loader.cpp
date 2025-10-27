@@ -61,7 +61,7 @@ TEST_F(SchemaLoaderTest, LoadSchemaFromValidJsonString) {
     };
 
     auto result = loader_.loadSchemaFromString(schema_json.dump());
-    ASSERT_TRUE(result);
+    ASSERT_TRUE(result.is_success());
     auto schema = result.value();
     
     EXPECT_EQ(schema.title(), "Test Configuration");
@@ -92,7 +92,7 @@ TEST_F(SchemaLoaderTest, LoadSchemaWithNestedObjects) {
     };
 
     auto result = loader_.loadSchemaFromString(schema_json.dump());
-    ASSERT_TRUE(result);
+    ASSERT_TRUE(result.is_success());
     auto schema = result.value();
     
     auto properties = schema.properties();
@@ -118,7 +118,7 @@ TEST_F(SchemaLoaderTest, LoadSchemaWithArrays) {
     };
 
     auto result = loader_.loadSchemaFromString(schema_json.dump());
-    ASSERT_TRUE(result);
+    ASSERT_TRUE(result.is_success());
     auto schema = result.value();
     
     auto properties = schema.properties();
@@ -150,7 +150,7 @@ TEST_F(SchemaLoaderTest, LoadSchemaWithValidationRules) {
     };
 
     auto result = loader_.loadSchemaFromString(schema_json.dump());
-    ASSERT_TRUE(result);
+    ASSERT_TRUE(result.is_success());
     
     // Verify schema loaded successfully
     EXPECT_TRUE(result.value().is_valid());
@@ -170,7 +170,7 @@ TEST_F(SchemaLoaderTest, LoadSchemaFromFile) {
     std::string file_path = (test_dir_ / "test_schema.json").string();
 
     auto result = loader_.loadSchema(file_path);
-    ASSERT_TRUE(result);
+    ASSERT_TRUE(result.is_success());
     
     auto schema = result.value();
     EXPECT_EQ(schema.title(), "File Test Schema");
@@ -180,21 +180,21 @@ TEST_F(SchemaLoaderTest, LoadSchemaFromFile) {
 TEST_F(SchemaLoaderTest, InvalidJsonStringReturnsError) {
     std::string invalid_json = "{invalid json";
     auto result = loader_.loadSchemaFromString(invalid_json);
-    EXPECT_FALSE(result);
+    EXPECT_FALSE(result.is_success());
 }
 
 // Test: Handle missing file
 TEST_F(SchemaLoaderTest, MissingFileReturnsError) {
     std::string file_path = (test_dir_ / "nonexistent.json").string();
     auto result = loader_.loadSchema(file_path);
-    EXPECT_FALSE(result);
+    EXPECT_FALSE(result.is_success());
 }
 
 // Test: Handle empty schema
 TEST_F(SchemaLoaderTest, EmptySchemaIsValid) {
     json empty_schema = json::object();
     auto result = loader_.loadSchemaFromString(empty_schema.dump());
-    ASSERT_TRUE(result);
+    ASSERT_TRUE(result.is_success());
 }
 
 // Test: Load schema with default values
@@ -214,7 +214,7 @@ TEST_F(SchemaLoaderTest, LoadSchemaWithDefaults) {
     };
 
     auto result = loader_.loadSchemaFromString(schema_json.dump());
-    ASSERT_TRUE(result);
+    ASSERT_TRUE(result.is_success());
     auto schema = result.value();
     
     auto properties = schema.properties();
@@ -238,7 +238,7 @@ TEST_F(SchemaLoaderTest, LoadLargeSchemaWithManyProperties) {
     }
 
     auto result = loader_.loadSchemaFromString(schema_json.dump());
-    ASSERT_TRUE(result);
+    ASSERT_TRUE(result.is_success());
     auto schema = result.value();
     
     auto properties = schema.properties();
@@ -258,7 +258,7 @@ TEST_F(SchemaLoaderTest, ParseRequiredFields) {
     };
 
     auto result = loader_.loadSchemaFromString(schema_json.dump());
-    ASSERT_TRUE(result);
+    ASSERT_TRUE(result.is_success());
     auto schema = result.value();
     
     auto required = schema.required_fields();
@@ -280,7 +280,7 @@ TEST_F(SchemaLoaderTest, PreserveEnumValues) {
     };
 
     auto result = loader_.loadSchemaFromString(schema_json.dump());
-    ASSERT_TRUE(result);
+    ASSERT_TRUE(result.is_success());
     auto schema = result.value();
     
     auto properties = schema.properties();
@@ -300,7 +300,7 @@ TEST_F(SchemaLoaderTest, LoadUtf8Content) {
     };
 
     auto result = loader_.loadSchemaFromString(schema_json.dump());
-    ASSERT_TRUE(result);
+    ASSERT_TRUE(result.is_success());
     auto schema = result.value();
     
     EXPECT_TRUE(schema.title().find("你好") != std::string::npos);
@@ -323,8 +323,8 @@ TEST_F(SchemaLoaderTest, LoadMultipleSchemasSequentially) {
     auto result1 = loader_.loadSchemaFromString(schema1.dump());
     auto result2 = loader_.loadSchemaFromString(schema2.dump());
     
-    ASSERT_TRUE(result1);
-    ASSERT_TRUE(result2);
+    ASSERT_TRUE(result1.is_success());
+    ASSERT_TRUE(result2.is_success());
     EXPECT_EQ(result1.value().title(), "Schema 1");
     EXPECT_EQ(result2.value().title(), "Schema 2");
 }

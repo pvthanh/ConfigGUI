@@ -1,4 +1,6 @@
-# ConfigGUI Installation and Usage Guide
+# Installation and Usage Guide
+
+Complete guide for building, installing, and running the ConfigGUI application with step-by-step instructions and commands.
 
 **Version**: 1.0  
 **Date**: 2024-10-26  

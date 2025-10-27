@@ -52,10 +52,9 @@ protected:
 TEST_F(JsonIoTest, ReadValidJsonFromString) {
     std::string json_str = R"({"name": "John", "age": 30})";
     
-    JsonReader reader;
-    auto result = reader.parseString(json_str);
+    auto result = io::JsonReader::readString(json_str);
     
-    ASSERT_TRUE(result);
+    ASSERT_TRUE(result.is_success());
     EXPECT_EQ(result.value()["name"], "John");
     EXPECT_EQ(result.value()["age"], 30);
 }
@@ -64,10 +63,9 @@ TEST_F(JsonIoTest, ReadValidJsonFromString) {
 TEST_F(JsonIoTest, ReadInvalidJsonReturnsError) {
     std::string invalid_json = R"({"name": "John", "age": 30)"; // Missing closing brace
     
-    JsonReader reader;
-    auto result = reader.parseString(invalid_json);
+    auto result = io::JsonReader::readString(invalid_json);
     
-    EXPECT_FALSE(result);
+    EXPECT_FALSE(result.is_success());
 }
 
 // Test: Read JSON from file
@@ -76,20 +74,18 @@ TEST_F(JsonIoTest, ReadJsonFromFile) {
     std::string filepath = GetTestFilePath("config.json");
     WriteTestFile("config.json", json_str);
     
-    JsonReader reader;
-    auto result = reader.readFile(filepath);
+    auto result = io::JsonReader::readFile(filepath);
     
-    ASSERT_TRUE(result);
+    ASSERT_TRUE(result.is_success());
     EXPECT_EQ(result.value()["name"], "Alice");
     EXPECT_EQ(result.value()["email"], "alice@example.com");
 }
 
 // Test: Read non-existent file returns error
 TEST_F(JsonIoTest, ReadNonExistentFileReturnsError) {
-    JsonReader reader;
-    auto result = reader.readFile("/non/existent/path.json");
+    auto result = io::JsonReader::readFile("/non/existent/path.json");
     
-    EXPECT_FALSE(result);
+    EXPECT_FALSE(result.is_success());
 }
 
 // Test: Write JSON to string
@@ -100,10 +96,9 @@ TEST_F(JsonIoTest, WriteJsonToString) {
         {"active", true}
     };
     
-    JsonWriter writer;
-    auto result = writer.toString(data);
+    auto result = io::JsonWriter::toString(data);
     
-    ASSERT_TRUE(result);
+    ASSERT_TRUE(result.is_success());
     std::string json_str = result.value();
     EXPECT_FALSE(json_str.empty());
     EXPECT_NE(json_str.find("\"name\""), std::string::npos);
@@ -118,10 +113,9 @@ TEST_F(JsonIoTest, WriteJsonToFile) {
     };
     
     std::string filepath = GetTestFilePath("output.json");
-    JsonWriter writer;
-    auto result = writer.writeFile(filepath, data);
+    auto result = io::JsonWriter::writeFile(filepath, data);
     
-    ASSERT_TRUE(result);
+    ASSERT_TRUE(result.is_success());
     EXPECT_TRUE(fs::exists(filepath));
     
     // Verify file contents
@@ -146,14 +140,12 @@ TEST_F(JsonIoTest, RoundTripJson) {
     std::string filepath = GetTestFilePath("roundtrip.json");
     
     // Write
-    JsonWriter writer;
-    auto write_result = writer.writeFile(filepath, original);
-    ASSERT_TRUE(write_result);
+    auto write_result = io::JsonWriter::writeFile(filepath, original);
+    ASSERT_TRUE(write_result.is_success());
     
     // Read
-    JsonReader reader;
-    auto read_result = reader.readFile(filepath);
-    ASSERT_TRUE(read_result);
+    auto read_result = io::JsonReader::readFile(filepath);
+    ASSERT_TRUE(read_result.is_success());
     
     // Verify contents
     json read_data = read_result.value();
@@ -174,10 +166,9 @@ TEST_F(JsonIoTest, ReadJsonWithNestedObjects) {
         }
     })";
     
-    JsonReader reader;
-    auto result = reader.parseString(json_str);
+    auto result = io::JsonReader::readString(json_str);
     
-    ASSERT_TRUE(result);
+    ASSERT_TRUE(result.is_success());
     EXPECT_EQ(result.value()["user"]["name"], "David");
     EXPECT_EQ(result.value()["user"]["contact"]["email"], "david@example.com");
 }
@@ -189,10 +180,9 @@ TEST_F(JsonIoTest, ReadJsonWithArrays) {
         "scores": [85, 90, 95]
     })";
     
-    JsonReader reader;
-    auto result = reader.parseString(json_str);
+    auto result = io::JsonReader::readString(json_str);
     
-    ASSERT_TRUE(result);
+    ASSERT_TRUE(result.is_success());
     auto tags = result.value()["tags"];
     EXPECT_EQ(tags.size(), 3);
     EXPECT_EQ(tags[0], "python");
@@ -207,10 +197,9 @@ TEST_F(JsonIoTest, WriteJsonWithUtf8) {
         {"emoji", "😀"}
     };
     
-    JsonWriter writer;
-    auto result = writer.toString(data);
+    auto result = io::JsonWriter::toString(data);
     
-    ASSERT_TRUE(result);
+    ASSERT_TRUE(result.is_success());
     std::string json_str = result.value();
     EXPECT_NE(json_str.find("François"), std::string::npos);
 }
@@ -225,10 +214,9 @@ TEST_F(JsonIoTest, WriteJsonWithPrettyFormatting) {
         }}
     };
     
-    JsonWriter writer;
-    auto result = writer.toString(data, true); // pretty=true
+    auto result = io::JsonWriter::toString(data, true); // pretty=true
     
-    ASSERT_TRUE(result);
+    ASSERT_TRUE(result.is_success());
     std::string json_str = result.value();
     // Pretty-printed JSON should contain newlines
     EXPECT_NE(json_str.find("\n"), std::string::npos);
@@ -241,10 +229,9 @@ TEST_F(JsonIoTest, WriteJsonWithCompactFormatting) {
         {"active", true}
     };
     
-    JsonWriter writer;
-    auto result = writer.toString(data, false); // pretty=false
+    auto result = io::JsonWriter::toString(data, false); // pretty=false
     
-    ASSERT_TRUE(result);
+    ASSERT_TRUE(result.is_success());
     std::string json_str = result.value();
     // Compact format should not have unnecessary whitespace
     EXPECT_TRUE(json_str.length() > 0);
@@ -254,25 +241,26 @@ TEST_F(JsonIoTest, WriteJsonWithCompactFormatting) {
 TEST_F(JsonIoTest, PreserveKeyOrder) {
     std::string json_str = R"({"z": 1, "a": 2, "m": 3})";
     
-    JsonReader reader;
-    auto result = reader.parseString(json_str);
+    auto result = io::JsonReader::readString(json_str);
     
-    ASSERT_TRUE(result);
+    ASSERT_TRUE(result.is_success());
     // Using ordered_json should preserve insertion order
-    auto keys = result.value().keys();
-    EXPECT_EQ(keys[0], "z");
-    EXPECT_EQ(keys[1], "a");
-    EXPECT_EQ(keys[2], "m");
+    auto& json_obj = result.value();
+    auto it = json_obj.begin();
+    EXPECT_EQ(it.key(), "z");
+    ++it;
+    EXPECT_EQ(it.key(), "a");
+    ++it;
+    EXPECT_EQ(it.key(), "m");
 }
 
 // Test: Handle empty JSON object
 TEST_F(JsonIoTest, HandleEmptyJsonObject) {
     std::string json_str = "{}";
     
-    JsonReader reader;
-    auto result = reader.parseString(json_str);
+    auto result = io::JsonReader::readString(json_str);
     
-    ASSERT_TRUE(result);
+    ASSERT_TRUE(result.is_success());
     EXPECT_EQ(result.value().size(), 0);
 }
 
@@ -280,10 +268,9 @@ TEST_F(JsonIoTest, HandleEmptyJsonObject) {
 TEST_F(JsonIoTest, HandleEmptyJsonArray) {
     std::string json_str = "[]";
     
-    JsonReader reader;
-    auto result = reader.parseString(json_str);
+    auto result = io::JsonReader::readString(json_str);
     
-    ASSERT_TRUE(result);
+    ASSERT_TRUE(result.is_success());
     EXPECT_TRUE(result.value().is_array());
 }
 
@@ -291,10 +278,9 @@ TEST_F(JsonIoTest, HandleEmptyJsonArray) {
 TEST_F(JsonIoTest, HandleJsonWithNulls) {
     std::string json_str = R"({"value": null, "name": "Test"})";
     
-    JsonReader reader;
-    auto result = reader.parseString(json_str);
+    auto result = io::JsonReader::readString(json_str);
     
-    ASSERT_TRUE(result);
+    ASSERT_TRUE(result.is_success());
     EXPECT_TRUE(result.value()["value"].is_null());
 }
 
@@ -309,13 +295,11 @@ TEST_F(JsonIoTest, HandleLargeJsonFile) {
     
     std::string filepath = GetTestFilePath("large.json");
     
-    JsonWriter writer;
-    auto write_result = writer.writeFile(filepath, data);
-    ASSERT_TRUE(write_result);
+    auto write_result = io::JsonWriter::writeFile(filepath, data);
+    ASSERT_TRUE(write_result.is_success());
     
-    JsonReader reader;
-    auto read_result = reader.readFile(filepath);
-    ASSERT_TRUE(read_result);
+    auto read_result = io::JsonReader::readFile(filepath);
+    ASSERT_TRUE(read_result.is_success());
     EXPECT_EQ(read_result.value().size(), 1000);
 }
 
@@ -335,13 +319,11 @@ TEST_F(JsonIoTest, HandleDeeplyNestedJson) {
     
     std::string filepath = GetTestFilePath("nested.json");
     
-    JsonWriter writer;
-    auto write_result = writer.writeFile(filepath, data);
-    ASSERT_TRUE(write_result);
+    auto write_result = io::JsonWriter::writeFile(filepath, data);
+    ASSERT_TRUE(write_result.is_success());
     
-    JsonReader reader;
-    auto read_result = reader.readFile(filepath);
-    ASSERT_TRUE(read_result);
+    auto read_result = io::JsonReader::readFile(filepath);
+    ASSERT_TRUE(read_result.is_success());
     EXPECT_EQ(read_result.value()["level1"]["level2"]["level3"]["level4"]["level5"], "deep_value");
 }
 
@@ -360,13 +342,11 @@ TEST_F(JsonIoTest, HandleJsonWithVariousTypes) {
     
     std::string filepath = GetTestFilePath("mixed_types.json");
     
-    JsonWriter writer;
-    auto write_result = writer.writeFile(filepath, data);
-    ASSERT_TRUE(write_result);
+    auto write_result = io::JsonWriter::writeFile(filepath, data);
+    ASSERT_TRUE(write_result.is_success());
     
-    JsonReader reader;
-    auto read_result = reader.readFile(filepath);
-    ASSERT_TRUE(read_result);
+    auto read_result = io::JsonReader::readFile(filepath);
+    ASSERT_TRUE(read_result.is_success());
     
     json& result = read_result.value();
     EXPECT_EQ(result["string_val"], "text");
@@ -383,19 +363,17 @@ TEST_F(JsonIoTest, OverwriteExistingJsonFile) {
     
     // Write first version
     json data1 = {{"version", "1.0"}};
-    JsonWriter writer;
-    auto result1 = writer.writeFile(filepath, data1);
-    ASSERT_TRUE(result1);
+    auto result1 = io::JsonWriter::writeFile(filepath, data1);
+    ASSERT_TRUE(result1.is_success());
     
     // Overwrite with second version
     json data2 = {{"version", "2.0"}, {"updated", true}};
-    auto result2 = writer.writeFile(filepath, data2);
-    ASSERT_TRUE(result2);
+    auto result2 = io::JsonWriter::writeFile(filepath, data2);
+    ASSERT_TRUE(result2.is_success());
     
     // Verify final content
-    JsonReader reader;
-    auto read_result = reader.readFile(filepath);
-    ASSERT_TRUE(read_result);
+    auto read_result = io::JsonReader::readFile(filepath);
+    ASSERT_TRUE(read_result.is_success());
     EXPECT_EQ(read_result.value()["version"], "2.0");
     EXPECT_EQ(read_result.value()["updated"], true);
 }
@@ -406,8 +384,7 @@ TEST_F(JsonIoTest, HandleFilePermissionError) {
     std::string filepath = "/root/configgui_test_no_permission.json";
     
     json data = {{"test", "data"}};
-    JsonWriter writer;
-    auto result = writer.writeFile(filepath, data);
+    auto result = io::JsonWriter::writeFile(filepath, data);
     
     // Should fail due to permissions (unless running as root)
     // This test may fail on some systems, so we don't assert

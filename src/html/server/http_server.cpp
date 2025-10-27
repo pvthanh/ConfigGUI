@@ -51,10 +51,10 @@ void HttpServer::del(const std::string& path, RequestHandler handler) {
 
 void HttpServer::get_regex(const std::string& pattern, RequestHandler handler) {
     if (server_) {
-        // Note: cpp-httplib Get() method signature for regex depends on version
-        // Using this as a workaround - routing will be handled by main.cpp instead
-        (void)pattern;  // Unused for now
-        (void)handler;  // Unused for now
+        // For cpp-httplib v0.11, we use a workaround - register routes manually in main.cpp
+        // This function is kept for API compatibility but delegates to main.cpp to handle
+        (void)pattern;
+        (void)handler;
     }
 }
 

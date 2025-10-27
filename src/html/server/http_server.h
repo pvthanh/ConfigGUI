@@ -102,6 +102,12 @@ public:
      */
     const std::string& getHost() const { return host_; }
 
+    /**
+     * @brief Get underlying httplib::Server for advanced routing
+     * @return Pointer to httplib::Server
+     */
+    httplib::Server* getServer() { return server_.get(); }
+
 private:
     int port_;
     std::string host_;

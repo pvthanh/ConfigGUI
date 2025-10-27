@@ -1311,3 +1311,174 @@ body {
         border: 1px solid var(--border-color);
     }
 }
+
+/* ============================================================================
+   Server File List Styles
+   ============================================================================ */
+
+.server-files-section {
+    margin-top: var(--space-2xl);
+    padding: var(--space-lg);
+    background: var(--bg-color);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+}
+
+.server-files-section h3 {
+    margin-top: 0;
+    margin-bottom: var(--space-lg);
+    color: var(--text-primary);
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+}
+
+.server-file-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.server-file-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-md);
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    transition: all 0.2s ease;
+}
+
+.server-file-item:hover {
+    box-shadow: var(--shadow-md);
+    border-color: var(--primary-color);
+}
+
+.server-file-item.active {
+    background: #f0f4ff;
+    border-color: var(--primary-color);
+}
+
+.server-file-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+}
+
+.server-file-name {
+    color: var(--text-primary);
+    font-weight: 500;
+    word-break: break-all;
+}
+
+.server-file-meta {
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+}
+
+.file-actions {
+    display: flex;
+    gap: var(--space-sm);
+    margin-left: var(--space-md);
+}
+
+.file-actions button {
+    padding: var(--space-sm) var(--space-md);
+    font-size: var(--font-size-sm);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.file-actions button:hover {
+    border-color: var(--primary-color);
+    background: var(--primary-color);
+    color: white;
+}
+
+.file-actions .btn-download {
+    color: var(--info-color);
+    border-color: var(--info-color);
+}
+
+.file-actions .btn-download:hover {
+    background: var(--info-color);
+    border-color: var(--info-color);
+    color: white;
+}
+
+.file-actions .btn-delete {
+    color: var(--error-color);
+    border-color: var(--error-color);
+}
+
+.file-actions .btn-delete:hover {
+    background: var(--error-color);
+    border-color: var(--error-color);
+    color: white;
+}
+
+.server-files-empty {
+    padding: var(--space-lg);
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+    background: white;
+    border: 1px dashed var(--border-color);
+    border-radius: var(--radius-md);
+}
+
+.server-files-loading {
+    padding: var(--space-lg);
+    text-align: center;
+    color: var(--text-secondary);
+}
+
+.server-files-loading::after {
+    content: "";
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    margin-left: var(--space-sm);
+    border: 2px solid var(--border-color);
+    border-top-color: var(--primary-color);
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Responsive adjustments for server file list */
+@media (max-width: 640px) {
+    .server-files-section {
+        padding: var(--space-md);
+    }
+
+    .server-file-item {
+        flex-wrap: wrap;
+        padding: var(--space-md);
+    }
+
+    .server-file-info {
+        flex-basis: 100%;
+        margin-bottom: var(--space-sm);
+    }
+
+    .file-actions {
+        flex-basis: 100%;
+        margin-left: 0;
+        justify-content: flex-end;
+    }
+
+    .server-file-list {
+        max-height: 500px;
+    }
+}

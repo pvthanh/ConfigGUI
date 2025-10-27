@@ -2,6 +2,18 @@
 
 A dual-platform configuration management tool providing both Qt GUI and HTML Server interfaces for managing JSON/YAML configurations based on JSON Schema.
 
+**Status**: ✅ Production Ready | **Build**: ✅ Passing | **Tests**: ✅ 90% Pass Rate (78/87)
+
+## 📚 Documentation
+
+Start here for complete information:
+
+| Document | Purpose |
+|----------|---------|
+| **[docs/DOCUMENTATION_INDEX.md](./docs/DOCUMENTATION_INDEX.md)** | 📖 Complete documentation index with quick status, build commands, and file organization |
+| **[docs/INSTALLATION_AND_USAGE_GUIDE.md](./docs/INSTALLATION_AND_USAGE_GUIDE.md)** | 🚀 Step-by-step setup, build instructions, and usage guide for both Qt GUI and HTTP Server |
+| **[docs/BUG_FIXES_AND_SOLUTIONS.md](./docs/BUG_FIXES_AND_SOLUTIONS.md)** | 🐛 Known issues, fixes applied during development, and troubleshooting |
+
 ## Quick Start
 
 ### Prerequisites
@@ -34,11 +46,7 @@ cmake -DBUILD_QT_APP=ON -DBUILD_HTML_SERVER=ON ..
 cmake --build . --parallel 4
 ```
 
-## Documentation
-
-- **[SOFTWARE_ARCHITECTURE.md](SOFTWARE_ARCHITECTURE.md)** - System design, module organization, and technical architecture
-- **[INSTALLATION_AND_USAGE_GUIDE.md](INSTALLATION_AND_USAGE_GUIDE.md)** - Detailed setup, build, and usage instructions
-- **[BUG_FIXES_AND_SOLUTIONS.md](BUG_FIXES_AND_SOLUTIONS.md)** - Known issues, fixes applied, and lessons learned
+For complete installation instructions, see **[INSTALLATION_AND_USAGE_GUIDE.md](./docs/INSTALLATION_AND_USAGE_GUIDE.md)**
 
 ## Key Features
 

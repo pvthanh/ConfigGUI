@@ -127,9 +127,6 @@
                     <div class="form-header">
                         <button class="btn btn-back" id="back-from-form-btn">← Back</button>
                         <h2 id="form-title">Configuration Form</h2>
-                        <div class="form-header-actions">
-                            <button class="btn btn-icon" id="export-btn" title="Export Configuration">💾</button>
-                        </div>
                     </div>
 
                     <!-- Form Toolbar -->
@@ -146,7 +143,14 @@
                     <div class="form-actions">
                         <button class="btn btn-secondary" id="reset-form-btn">Reset</button>
                         <button class="btn btn-success" id="save-btn">💾 Save Configuration</button>
-                        <button class="btn btn-primary" id="submit-btn">Export Configuration</button>
+                    </div>
+
+                    <!-- Server File List Section -->
+                    <div class="server-files-section">
+                        <h3>📦 Saved Configurations (Server Backup)</h3>
+                        <div id="server-file-list" class="server-file-list">
+                            <!-- Populated by JavaScript -->
+                        </div>
                     </div>
                 </div>
             </div>

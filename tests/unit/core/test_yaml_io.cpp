@@ -50,10 +50,9 @@ protected:
 TEST_F(YamlIoTest, ReadValidYamlFromString) {
     std::string yaml_str = "name: John\nage: 30";
     
-    YamlReader reader;
-    auto result = reader.parseString(yaml_str);
+    auto result = io::YamlReader::readString(yaml_str);
     
-    ASSERT_TRUE(result);
+    ASSERT_TRUE(result.is_success());
     EXPECT_EQ(result.value()["name"], "John");
     EXPECT_EQ(result.value()["age"], 30);
 }
@@ -64,20 +63,18 @@ TEST_F(YamlIoTest, ReadYamlFromFile) {
     std::string filepath = GetTestFilePath("config.yaml");
     WriteTestFile("config.yaml", yaml_str);
     
-    YamlReader reader;
-    auto result = reader.readFile(filepath);
+    auto result = io::YamlReader::readFile(filepath);
     
-    ASSERT_TRUE(result);
+    ASSERT_TRUE(result.is_success());
     EXPECT_EQ(result.value()["name"], "Alice");
     EXPECT_EQ(result.value()["email"], "alice@example.com");
 }
 
 // Test: Read non-existent YAML file returns error
 TEST_F(YamlIoTest, ReadNonExistentFileReturnsError) {
-    YamlReader reader;
-    auto result = reader.readFile("/non/existent/path.yaml");
+    auto result = io::YamlReader::readFile("/non/existent/path.yaml");
     
-    EXPECT_FALSE(result);
+    EXPECT_FALSE(result.is_success());
 }
 
 // Test: Write YAML to string
@@ -88,10 +85,9 @@ TEST_F(YamlIoTest, WriteYamlToString) {
         {"active", true}
     };
     
-    YamlWriter writer;
-    auto result = writer.toString(data);
+    auto result = io::YamlWriter::toString(data);
     
-    ASSERT_TRUE(result);
+    ASSERT_TRUE(result.is_success());
     std::string yaml_str = result.value();
     EXPECT_FALSE(yaml_str.empty());
 }
@@ -104,10 +100,9 @@ TEST_F(YamlIoTest, WriteYamlToFile) {
     };
     
     std::string filepath = GetTestFilePath("output.yaml");
-    YamlWriter writer;
-    auto result = writer.writeFile(filepath, data);
+    auto result = io::YamlWriter::writeFile(filepath, data);
     
-    ASSERT_TRUE(result);
+    ASSERT_TRUE(result.is_success());
     EXPECT_TRUE(fs::exists(filepath));
     
     // Verify file contents
@@ -132,14 +127,12 @@ TEST_F(YamlIoTest, RoundTripYaml) {
     std::string filepath = GetTestFilePath("roundtrip.yaml");
     
     // Write
-    YamlWriter writer;
-    auto write_result = writer.writeFile(filepath, original);
-    ASSERT_TRUE(write_result);
+    auto write_result = io::YamlWriter::writeFile(filepath, original);
+    ASSERT_TRUE(write_result.is_success());
     
     // Read
-    YamlReader reader;
-    auto read_result = reader.readFile(filepath);
-    ASSERT_TRUE(read_result);
+    auto read_result = io::YamlReader::readFile(filepath);
+    ASSERT_TRUE(read_result.is_success());
     
     // Verify contents
     nlohmann::json read_data = read_result.value();
@@ -157,10 +150,9 @@ TEST_F(YamlIoTest, ReadYamlWithNestedObjects) {
     phone: 123-456-7890
 )";
     
-    YamlReader reader;
-    auto result = reader.parseString(yaml_str);
+    auto result = io::YamlReader::readString(yaml_str);
     
-    ASSERT_TRUE(result);
+    ASSERT_TRUE(result.is_success());
     EXPECT_EQ(result.value()["user"]["name"], "David");
     EXPECT_EQ(result.value()["user"]["contact"]["email"], "david@example.com");
 }
@@ -177,10 +169,9 @@ scores:
   - 95
 )";
     
-    YamlReader reader;
-    auto result = reader.parseString(yaml_str);
+    auto result = io::YamlReader::readString(yaml_str);
     
-    ASSERT_TRUE(result);
+    ASSERT_TRUE(result.is_success());
     auto tags = result.value()["tags"];
     EXPECT_EQ(tags.size(), 3);
     EXPECT_EQ(tags[0], "python");
@@ -195,10 +186,9 @@ TEST_F(YamlIoTest, WriteYamlWithUtf8) {
         {"emoji", "😀"}
     };
     
-    YamlWriter writer;
-    auto result = writer.toString(data);
+    auto result = io::YamlWriter::toString(data);
     
-    ASSERT_TRUE(result);
+    ASSERT_TRUE(result.is_success());
     std::string yaml_str = result.value();
     // UTF-8 content should be preserved
     EXPECT_FALSE(yaml_str.empty());
@@ -211,10 +201,9 @@ name: Emma  # inline comment
 age: 28
 )";
     
-    YamlReader reader;
-    auto result = reader.parseString(yaml_str);
+    auto result = io::YamlReader::readString(yaml_str);
     
-    ASSERT_TRUE(result);
+    ASSERT_TRUE(result.is_success());
     EXPECT_EQ(result.value()["name"], "Emma");
     EXPECT_EQ(result.value()["age"], 28);
 }
@@ -227,10 +216,9 @@ TEST_F(YamlIoTest, ReadYamlWithMultilineStrings) {
   multiple lines
 )";
     
-    YamlReader reader;
-    auto result = reader.parseString(yaml_str);
+    auto result = io::YamlReader::readString(yaml_str);
     
-    ASSERT_TRUE(result);
+    ASSERT_TRUE(result.is_success());
     std::string desc = result.value()["description"];
     EXPECT_NE(desc.find("multiline"), std::string::npos);
 }
@@ -245,10 +233,9 @@ production:
   database: prod_db
 )";
     
-    YamlReader reader;
-    auto result = reader.parseString(yaml_str);
+    auto result = io::YamlReader::readString(yaml_str);
     
-    ASSERT_TRUE(result);
+    ASSERT_TRUE(result.is_success());
     // Behavior depends on yaml-cpp version and configuration
     EXPECT_TRUE(result.value().contains("production"));
 }
@@ -257,8 +244,7 @@ production:
 TEST_F(YamlIoTest, HandleEmptyYamlFile) {
     std::string yaml_str = "";
     
-    YamlReader reader;
-    auto result = reader.parseString(yaml_str);
+    auto result = io::YamlReader::readString(yaml_str);
     
     // Empty file behavior depends on yaml-cpp configuration
     // Could be valid empty or null
@@ -268,11 +254,10 @@ TEST_F(YamlIoTest, HandleEmptyYamlFile) {
 TEST_F(YamlIoTest, HandleYamlWithScalarsOnly) {
     std::string yaml_str = "42";
     
-    YamlReader reader;
-    auto result = reader.parseString(yaml_str);
+    auto result = io::YamlReader::readString(yaml_str);
     
     // Behavior depends on yaml-cpp configuration
-    ASSERT_TRUE(result);
+    ASSERT_TRUE(result.is_success());
 }
 
 // Test: Handle YAML with mixed types in arrays
@@ -284,10 +269,9 @@ TEST_F(YamlIoTest, HandleYamlWithMixedTypeArrays) {
   - true
 )";
     
-    YamlReader reader;
-    auto result = reader.parseString(yaml_str);
+    auto result = io::YamlReader::readString(yaml_str);
     
-    ASSERT_TRUE(result);
+    ASSERT_TRUE(result.is_success());
     auto mixed = result.value()["mixed"];
     EXPECT_EQ(mixed.size(), 4);
 }
@@ -305,10 +289,9 @@ TEST_F(YamlIoTest, HandleLargeYamlFile) {
     std::string filepath = GetTestFilePath("large.yaml");
     WriteTestFile("large.yaml", yaml_str);
     
-    YamlReader reader;
-    auto result = reader.readFile(filepath);
+    auto result = io::YamlReader::readFile(filepath);
     
-    ASSERT_TRUE(result);
+    ASSERT_TRUE(result.is_success());
     EXPECT_EQ(result.value()["fields"].size(), 100);
 }
 
@@ -324,10 +307,9 @@ TEST_F(YamlIoTest, HandleDeeplyNestedYaml) {
     std::string filepath = GetTestFilePath("nested.yaml");
     WriteTestFile("nested.yaml", yaml_str);
     
-    YamlReader reader;
-    auto result = reader.readFile(filepath);
+    auto result = io::YamlReader::readFile(filepath);
     
-    ASSERT_TRUE(result);
+    ASSERT_TRUE(result.is_success());
     EXPECT_EQ(result.value()["level1"]["level2"]["level3"]["level4"]["level5"], "deep_value");
 }
 
@@ -341,10 +323,9 @@ on_val: on
 off_val: off
 )";
     
-    YamlReader reader;
-    auto result = reader.parseString(yaml_str);
+    auto result = io::YamlReader::readString(yaml_str);
     
-    ASSERT_TRUE(result);
+    ASSERT_TRUE(result.is_success());
     // Different yaml-cpp versions may handle boolean variations differently
 }
 
@@ -355,10 +336,9 @@ tilde_val: ~
 empty_val:
 )";
     
-    YamlReader reader;
-    auto result = reader.parseString(yaml_str);
+    auto result = io::YamlReader::readString(yaml_str);
     
-    ASSERT_TRUE(result);
+    ASSERT_TRUE(result.is_success());
     // Null values should be parsed correctly
 }
 
@@ -374,14 +354,12 @@ TEST_F(YamlIoTest, ConvertBetweenYamlAndJson) {
     };
     
     std::string yaml_filepath = GetTestFilePath("convert.yaml");
-    YamlWriter yaml_writer;
-    auto yaml_result = yaml_writer.writeFile(yaml_filepath, data);
-    ASSERT_TRUE(yaml_result);
+    auto yaml_result = io::YamlWriter::writeFile(yaml_filepath, data);
+    ASSERT_TRUE(yaml_result.is_success());
     
     // Read as YAML
-    YamlReader yaml_reader;
-    auto yaml_read = yaml_reader.readFile(yaml_filepath);
-    ASSERT_TRUE(yaml_read);
+    auto yaml_read = io::YamlReader::readFile(yaml_filepath);
+    ASSERT_TRUE(yaml_read.is_success());
     
     // Verify contents match
     EXPECT_EQ(yaml_read.value()["name"], "Frank");
@@ -394,8 +372,7 @@ TEST_F(YamlIoTest, HandleYamlWithInconsistentIndentation) {
 key3: value3
 )";
     
-    YamlReader reader;
-    auto result = reader.parseString(yaml_str);
+    auto result = io::YamlReader::readString(yaml_str);
     
     // Result depends on yaml-cpp validation level
     // May either succeed with warnings or fail
@@ -407,19 +384,17 @@ TEST_F(YamlIoTest, OverwriteExistingYamlFile) {
     
     // Write first version
     nlohmann::json data1 = {{"version", "1.0"}};
-    YamlWriter writer;
-    auto result1 = writer.writeFile(filepath, data1);
-    ASSERT_TRUE(result1);
+    auto result1 = io::YamlWriter::writeFile(filepath, data1);
+    ASSERT_TRUE(result1.is_success());
     
     // Overwrite with second version
     nlohmann::json data2 = {{"version", "2.0"}, {"updated", true}};
-    auto result2 = writer.writeFile(filepath, data2);
-    ASSERT_TRUE(result2);
+    auto result2 = io::YamlWriter::writeFile(filepath, data2);
+    ASSERT_TRUE(result2.is_success());
     
     // Verify final content
-    YamlReader reader;
-    auto read_result = reader.readFile(filepath);
-    ASSERT_TRUE(read_result);
+    auto read_result = io::YamlReader::readFile(filepath);
+    ASSERT_TRUE(read_result.is_success());
     EXPECT_EQ(read_result.value()["version"], "2.0");
 }
 
@@ -429,10 +404,9 @@ TEST_F(YamlIoTest, HandleYamlWithScientificNotation) {
 small_number: 5.6e-8
 )";
     
-    YamlReader reader;
-    auto result = reader.parseString(yaml_str);
+    auto result = io::YamlReader::readString(yaml_str);
     
-    ASSERT_TRUE(result);
+    ASSERT_TRUE(result.is_success());
     // Scientific notation should be parsed correctly
 }
 
@@ -446,10 +420,9 @@ TEST_F(YamlIoTest, WriteYamlExplicitTypes) {
         {"null_val", nullptr}
     };
     
-    YamlWriter writer;
-    auto result = writer.toString(data);
+    auto result = io::YamlWriter::toString(data);
     
-    ASSERT_TRUE(result);
+    ASSERT_TRUE(result.is_success());
     std::string yaml_str = result.value();
     EXPECT_FALSE(yaml_str.empty());
 }

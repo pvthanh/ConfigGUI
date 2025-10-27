@@ -24,6 +24,8 @@ set(HTML_HANDLERS_SOURCES
     handlers/request_handler.h
     handlers/schema_service.cpp
     handlers/schema_service.h
+    handlers/file_handler.cpp
+    handlers/file_handler.h
 )
 
 # Define asset resources (for reference and installation)

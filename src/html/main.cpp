@@ -1,12 +1,14 @@
 #include "server/http_server.h"
 #include "handlers/request_handler.h"
 #include "handlers/schema_service.h"
+#include "handlers/file_handler.h"
 #include <iostream>
 #include <sstream>
 #include <fstream>
 #include <cstdlib>
 #include <csignal>
 #include <thread>
+#include <regex>
 
 using namespace configgui::html;
 
@@ -355,6 +357,58 @@ int main(int argc, char* argv[]) {
         // Fallback: minimal JS console message
         RequestHandler::sendJavaScript(res, "console.log('main.js not found, using fallback');");
     });
+
+    // ========== File Handler Routes (Hybrid Storage) ==========
+    
+    // POST /api/config/save - Save configuration file to server
+    g_server->post("/api/config/save", [](const httplib::Request& req, httplib::Response& res) {
+        configgui::handlers::FileHandler::handle_save_config(req, res);
+    });
+    
+    // GET /api/config/list - List saved configurations on server
+    g_server->get("/api/config/list", [](const httplib::Request& req, httplib::Response& res) {
+        configgui::handlers::FileHandler::handle_list_configs(req, res);
+    });
+    
+    // GET /api/config/download/{filename} - Download configuration from server
+    // Use raw server pointer to register a catch-all handler using standard library regex
+    auto* raw_server = g_server->getServer();
+    if (raw_server) {
+        // Register a handler that catches paths starting with /api/config/download/
+        raw_server->Get(R"(/api/config/download/.*)", [](const httplib::Request& req, httplib::Response& res) {
+            // Extract filename from path: /api/config/download/filename.json -> filename.json
+            std::string path = req.path;
+            std::string prefix = "/api/config/download/";
+            if (path.find(prefix) == 0 && path.length() > prefix.length()) {
+                std::string filename = path.substr(prefix.length());
+                configgui::handlers::FileHandler::handle_download_config(req, res, filename);
+                return;
+            }
+            res.status = 404;
+            res.set_content(R"({"error":"Not Found"})", "application/json");
+        });
+        
+        // DELETE /api/config/{filename} - Delete configuration from server
+        raw_server->Delete(R"(/api/config/.*)", [](const httplib::Request& req, httplib::Response& res) {
+            // Extract filename from path: /api/config/filename.json -> filename.json
+            // Exclude /api/config/list as that's a GET endpoint
+            std::string path = req.path;
+            std::string prefix = "/api/config/";
+            if (path.find(prefix) == 0 && path.length() > prefix.length()) {
+                std::string filename = path.substr(prefix.length());
+                // Don't allow deleting "list"
+                if (filename == "list") {
+                    res.status = 404;
+                    res.set_content(R"({"error":"Not Found"})", "application/json");
+                    return;
+                }
+                configgui::handlers::FileHandler::handle_delete_config(req, res, filename);
+                return;
+            }
+            res.status = 404;
+            res.set_content(R"({"error":"Not Found"})", "application/json");
+        });
+    }
 
     // Start server (blocking)
     if (!g_server->start()) {

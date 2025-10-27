@@ -76,11 +76,14 @@ add_subdirectory(src)
 # Enable testing
 enable_testing()
 
-# Unit Tests (Qt-specific)
-# (Defined in src/qt/CMakeLists.txt if BUILD_QT_APP is ON)
+# Find Google Test for unit testing
+find_package(GTest REQUIRED)
+
+# Unit Tests (Qt-specific and core tests)
+add_subdirectory(tests)
 
 # Integration Tests (Qt-specific)
-# (Defined in src/qt/CMakeLists.txt if BUILD_QT_APP is ON)
+# (Defined in tests/integration)
 
 # clang-tidy target
 if(CMAKE_CXX_CLANG_TIDY)
