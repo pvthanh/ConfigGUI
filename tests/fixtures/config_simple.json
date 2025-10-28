@@ -1,0 +1,11 @@
+{
+  "application": {
+    "name": "TestApp",
+    "version": "1.0.0"
+  },
+  "settings": {
+    "debug_mode": true,
+    "port": 8080,
+    "timeout": 30.5
+  }
+}

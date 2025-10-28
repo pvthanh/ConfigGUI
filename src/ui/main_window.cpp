@@ -3,6 +3,7 @@
 
 #include "main_window.h"
 #include "form_generator.h"
+#include "format_selection_dialog.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QMenu>
@@ -20,9 +21,112 @@
 #include <QScrollArea>
 #include <QScrollBar>
 #include <nlohmann/json.hpp>
+#include "core/io/ini_reader.h"
+
+using namespace configgui::core::models;
 
 namespace configgui {
 namespace ui {
+
+// Helper function to convert JSON to INI format
+static QString convertJsonToIni(const nlohmann::json& json_data)
+{
+    QString ini_content;
+    QTextStream stream(&ini_content);
+    
+    // Process each top-level key in the JSON
+    for (auto& element : json_data.items())
+    {
+        const std::string& key = element.key();
+        const auto& value = element.value();
+        
+        if (value.is_object())
+        {
+            // For nested objects, create a section [key]
+            stream << "[" << QString::fromStdString(key) << "]\n";
+            
+            // Add each property in the section
+            for (auto& sub_element : value.items())
+            {
+                const std::string& sub_key = sub_element.key();
+                const auto& sub_value = sub_element.value();
+                
+                QString value_str;
+                if (sub_value.is_string())
+                {
+                    value_str = QString::fromStdString(sub_value.get<std::string>());
+                }
+                else if (sub_value.is_number())
+                {
+                    if (sub_value.is_number_integer())
+                    {
+                        value_str = QString::number(sub_value.get<long long>());
+                    }
+                    else
+                    {
+                        value_str = QString::number(sub_value.get<double>());
+                    }
+                }
+                else if (sub_value.is_boolean())
+                {
+                    value_str = sub_value.get<bool>() ? "true" : "false";
+                }
+                else if (sub_value.is_array())
+                {
+                    // For arrays, join with comma
+                    std::string array_str;
+                    for (const auto& item : sub_value)
+                    {
+                        if (!array_str.empty()) array_str += ",";
+                        if (item.is_string()) array_str += item.get<std::string>();
+                        else if (item.is_number()) array_str += std::to_string(item.get<double>());
+                        else if (item.is_boolean()) array_str += (item.get<bool>() ? "true" : "false");
+                    }
+                    value_str = QString::fromStdString(array_str);
+                }
+                else if (sub_value.is_null())
+                {
+                    value_str = "";
+                }
+                
+                stream << QString::fromStdString(sub_key) << "=" << value_str << "\n";
+            }
+            stream << "\n";
+        }
+        else
+        {
+            // For simple key-value pairs at top level
+            QString value_str;
+            if (value.is_string())
+            {
+                value_str = QString::fromStdString(value.get<std::string>());
+            }
+            else if (value.is_number())
+            {
+                if (value.is_number_integer())
+                {
+                    value_str = QString::number(value.get<long long>());
+                }
+                else
+                {
+                    value_str = QString::number(value.get<double>());
+                }
+            }
+            else if (value.is_boolean())
+            {
+                value_str = value.get<bool>() ? "true" : "false";
+            }
+            else if (value.is_null())
+            {
+                value_str = "";
+            }
+            
+            stream << QString::fromStdString(key) << "=" << value_str << "\n";
+        }
+    }
+    
+    return ini_content;
+}
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
@@ -167,7 +271,7 @@ void MainWindow::onFileOpenConfiguration()
         QFileDialog dialog(this);
         dialog.setWindowTitle(tr("Load Configuration File"));
         dialog.setDirectory(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation));
-        dialog.setNameFilter(tr("JSON Files (*.json);;YAML Files (*.yaml *.yml);;All Files (*)"));
+        dialog.setNameFilter(tr("Configuration Files (*.json *.yaml *.yml *.ini);;JSON Files (*.json);;YAML Files (*.yaml *.yml);;INI Files (*.ini);;All Files (*)"));
         dialog.setFileMode(QFileDialog::ExistingFile);
         dialog.setOptions(QFileDialog::DontUseNativeDialog);  // Use Qt file dialog instead of native
         
@@ -267,8 +371,27 @@ void MainWindow::loadConfiguration(const QString& file_path)
 
     try
     {
-        // Parse the configuration JSON using ordered_json to preserve property order
-        const auto config = nlohmann::ordered_json::parse(content.toStdString());
+        // Parse the configuration based on file format
+        nlohmann::ordered_json config;
+        QString file_extension = QFileInfo(file_path).suffix().toLower();
+
+        if (file_extension == "ini")
+        {
+            // Parse INI file using INIReader
+            auto result = configgui::io::INIReader::readString(content.toStdString());
+            if (result.is_failure())
+            {
+                QMessageBox::critical(this, tr("INI Parse Error"),
+                    tr("Failed to parse INI configuration:\n\n%1").arg(QString::fromStdString(result.error())));
+                return;
+            }
+            config = result.value();
+        }
+        else
+        {
+            // Parse as JSON/YAML using ordered_json (YAML support via json parser)
+            config = nlohmann::ordered_json::parse(content.toStdString());
+        }
 
         // Update form with configuration data
         if (form_generator_)
@@ -286,14 +409,15 @@ void MainWindow::loadConfiguration(const QString& file_path)
         }
 
         QMessageBox::information(this, tr("Configuration Loaded"),
-            tr("Configuration loaded successfully!\n\nFile: %1\n\nContent preview:\n%2")
+            tr("Configuration loaded successfully!\n\nFile: %1\n\nFormat: %2\n\nContent preview:\n%3")
             .arg(file_path)
+            .arg(file_extension.toUpper())
             .arg(content.mid(0, 200) + (content.length() > 200 ? "..." : "")));
     }
-    catch (const nlohmann::json::exception& e)
+    catch (const std::exception& e)
     {
-        QMessageBox::critical(this, tr("JSON Error"),
-            tr("Failed to parse JSON configuration:\n\n%1").arg(QString::fromStdString(e.what())));
+        QMessageBox::critical(this, tr("Parse Error"),
+            tr("Failed to parse configuration file:\n\n%1").arg(QString::fromStdString(e.what())));
     }
 }
 
@@ -307,6 +431,17 @@ void MainWindow::onFileSave()
         return;
     }
 
+    // Let user select format (JSON or INI)
+    FormatSelectionDialog format_dialog(this);
+    if (format_dialog.exec() != QDialog::Accepted)
+    {
+        return;  // User cancelled format selection
+    }
+    
+    FormatType selected_format = format_dialog.selected_format();
+    QString format_extension = format_dialog.selected_format_extension();
+    QString format_filter = QString("Configuration Files (*%1);;All Files (*)").arg(format_extension);
+
     QString save_path = current_config_file_;
 
     // If no configuration is currently loaded, ask user where to save
@@ -314,7 +449,7 @@ void MainWindow::onFileSave()
     {
         save_path = QFileDialog::getSaveFileName(this,
             tr("Save New Configuration"), "",
-            tr("JSON Configuration Files (*.json);;All Files (*)"));
+            format_filter);
         
         if (save_path.isEmpty())
         {
@@ -323,36 +458,86 @@ void MainWindow::onFileSave()
     }
     else
     {
-        // Configuration is loaded - ask if user wants to overwrite it
-        QMessageBox::StandardButton reply = QMessageBox::question(this,
-            tr("Overwrite Configuration?"),
-            tr("Do you want to overwrite the current configuration file?\n\nFile: %1\n\nClick 'No' to save to a different location.")
-                .arg(QFileInfo(current_config_file_).fileName()),
-            QMessageBox::Yes | QMessageBox::No);
-
-        if (reply == QMessageBox::No)
+        // Check if the current file has a different extension than selected format
+        QString current_extension = QFileInfo(current_config_file_).suffix();
+        QString expected_extension = format_extension.right(format_extension.length() - 1); // Remove the dot
+        
+        if (current_extension.toLower() != expected_extension.toLower())
         {
-            // User chose not to overwrite - open file chooser
-            save_path = QFileDialog::getSaveFileName(this,
-                tr("Save Configuration As"), current_config_file_,
-                tr("JSON Configuration Files (*.json);;All Files (*)"));
-            
-            if (save_path.isEmpty())
+            // Different format - ask user if they want to save as new file
+            QMessageBox::StandardButton reply = QMessageBox::question(this,
+                tr("Save in Different Format?"),
+                tr("Current file is .%1 but you selected .%2 format.\n\nWould you like to save as a new file?")
+                    .arg(current_extension, expected_extension),
+                QMessageBox::Yes | QMessageBox::No);
+
+            if (reply == QMessageBox::Yes)
             {
-                return;  // User cancelled
+                // Open file chooser for new file
+                save_path = QFileDialog::getSaveFileName(this,
+                    tr("Save Configuration As"), "",
+                    format_filter);
+                
+                if (save_path.isEmpty())
+                {
+                    return;  // User cancelled
+                }
+            }
+            else
+            {
+                return;  // User chose not to save
+            }
+        }
+        else
+        {
+            // Same format - ask if user wants to overwrite
+            QMessageBox::StandardButton reply = QMessageBox::question(this,
+                tr("Overwrite Configuration?"),
+                tr("Do you want to overwrite the current configuration file?\n\nFile: %1\n\nClick 'No' to save to a different location.")
+                    .arg(QFileInfo(current_config_file_).fileName()),
+                QMessageBox::Yes | QMessageBox::No);
+
+            if (reply == QMessageBox::No)
+            {
+                // User chose not to overwrite - open file chooser
+                save_path = QFileDialog::getSaveFileName(this,
+                    tr("Save Configuration As"), current_config_file_,
+                    format_filter);
+                
+                if (save_path.isEmpty())
+                {
+                    return;  // User cancelled
+                }
             }
         }
     }
 
-    // Now save to the determined path
+    // Now save to the determined path in the selected format
     try
     {
-        // Get current form data
+        // Get current form data as JSON
         const auto form_data = form_generator_->getFormData();
 
-        // Convert to string
-        std::string json_string = form_data.dump(2);
-        QString content = QString::fromStdString(json_string);
+        QString content;
+        
+        if (selected_format == FormatType::JSON)
+        {
+            // Save as JSON
+            std::string json_string = form_data.dump(2);
+            content = QString::fromStdString(json_string);
+        }
+        else if (selected_format == FormatType::INI)
+        {
+            // Save as INI - convert JSON to INI format
+            // INI format: key=value with sections [section.subsection]
+            content = convertJsonToIni(form_data);
+        }
+        else
+        {
+            QMessageBox::critical(this, tr("Error"),
+                tr("Unsupported format selected"));
+            return;
+        }
 
         // Write to file
         QFile file(save_path);
@@ -385,7 +570,8 @@ void MainWindow::onFileSave()
         }
 
         QMessageBox::information(this, tr("Configuration Saved"),
-            tr("Configuration saved successfully!\n\nFile: %1").arg(save_path));
+            tr("Configuration saved successfully as %1!\n\nFile: %2")
+                .arg(format_dialog.selected_format_name(), save_path));
     }
     catch (const std::exception& e)
     {

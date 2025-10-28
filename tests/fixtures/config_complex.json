@@ -1,0 +1,30 @@
+{
+  "database": {
+    "hosts": [
+      {
+        "name": "primary",
+        "address": "db1.example.com",
+        "port": 5432
+      },
+      {
+        "name": "secondary",
+        "address": "db2.example.com",
+        "port": 5432
+      }
+    ],
+    "credentials": {
+      "username": "admin",
+      "password": "secure_pass_123",
+      "timeout": 30.0
+    },
+    "options": {
+      "ssl": true,
+      "max_connections": 100
+    }
+  },
+  "features": {
+    "caching": true,
+    "compression": false,
+    "validation_level": "strict"
+  }
+}

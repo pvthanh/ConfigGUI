@@ -6,6 +6,8 @@
 set(QT_UI_SOURCES
     ../ui/main_window.h
     ../ui/main_window.cpp
+    ../ui/format_selection_dialog.h
+    ../ui/format_selection_dialog.cpp
     ../ui/widget_factory.h
     ../ui/widget_factory.cpp
     ../ui/form_generator.h

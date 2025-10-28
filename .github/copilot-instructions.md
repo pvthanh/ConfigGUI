@@ -3,6 +3,8 @@
 Auto-generated from all feature plans. Last updated: 2025-10
 
 ## Active Technologies
+- C++17 (core) + C++ with Qt6 (Qt GUI) + ES6 JavaScript/HTML5 (HTML GUI) (003-multi-format-save)
+- File system (JSON and INI files) (003-multi-format-save)
 
 ### Core (All Platforms)
 - **Language/Version**: C++17 with MISRA C++ compliance

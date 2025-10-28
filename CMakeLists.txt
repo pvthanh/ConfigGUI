@@ -49,6 +49,19 @@ find_package(nlohmann_json_schema_validator REQUIRED)
 # Find yaml-cpp
 find_package(yaml-cpp REQUIRED)
 
+# Fetch mINI library (header-only, for INI format support)
+# Used by core library for INI serialization
+FetchContent_Declare(mINI
+    GIT_REPOSITORY https://github.com/pulzed/mINI.git
+    GIT_TAG master
+)
+FetchContent_GetProperties(mINI)
+if(NOT mini_POPULATED)
+    FetchContent_Populate(mINI)
+    # mINI is header-only, just add include directory
+    set(mINI_INCLUDE_DIRS "${mini_SOURCE_DIR}/include")
+endif()
+
 # Fetch cpp-httplib (header-only, C++17)
 # Only used by HTML server build (Phase 3)
 FetchContent_Declare(cpp-httplib

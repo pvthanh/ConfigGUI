@@ -13,6 +13,26 @@ set(CORE_DATA_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/data/form_state.h
 )
 
+# Multi-format save feature models (Phase 1)
+set(CORE_MODELS_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/models/format_type.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/models/format_type.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/models/serialization_context.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/models/serialization_result.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/models/serialization_result.cpp
+)
+
+# Multi-format save feature serializers (Phase 1-3)
+set(CORE_SERIALIZERS_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/serializers/format_serializer.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/serializers/serializer_factory.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/serializers/serializer_factory.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/serializers/json_serializer.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/serializers/json_serializer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/serializers/ini_serializer.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/serializers/ini_serializer.cpp
+)
+
 # Core schema and validation
 set(CORE_SCHEMA_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/schema/schema.cpp
@@ -35,6 +55,16 @@ set(CORE_IO_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/io/yaml_reader.h
     ${CMAKE_CURRENT_SOURCE_DIR}/io/yaml_writer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/io/yaml_writer.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/io/ini_parser.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/io/ini_parser.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/io/ini_reader.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/io/ini_reader.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/io/ini_writer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/io/ini_writer.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/io/configuration_writer.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/io/configuration_writer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/io/configuration_reader.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/io/configuration_reader.cpp
 )
 
 # Core infrastructure (no subdirectory)
@@ -49,6 +79,8 @@ set(CORE_SOURCES
     ${CORE_DATA_SOURCES}
     ${CORE_SCHEMA_SOURCES}
     ${CORE_IO_SOURCES}
+    ${CORE_MODELS_SOURCES}
+    ${CORE_SERIALIZERS_SOURCES}
 )
 
 # Create core static library (no Qt dependencies)
@@ -70,6 +102,12 @@ target_link_libraries(ConfigGUICore
         nlohmann_json::nlohmann_json
         nlohmann_json_schema_validator
         yaml-cpp
+)
+
+# Include mINI header-only library
+target_include_directories(ConfigGUICore
+    PUBLIC
+        ${mINI_INCLUDE_DIRS}
 )
 
 # C++17 requirement

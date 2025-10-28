@@ -134,6 +134,11 @@ void HttpServer::setupLogging() {
         
         std::cout << "[" << std::put_time(std::localtime(&time), "%Y-%m-%d %H:%M:%S") << "] ";
         std::cout << req.method << " " << req.path << " → " << res.status << std::endl;
+        
+        // Special logging for config save endpoint
+        if (req.path == "/api/config/save") {
+            std::cout << "   [DEBUG] POST /api/config/save was routed with status: " << res.status << std::endl;
+        }
     });
 }
 

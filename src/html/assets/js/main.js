@@ -941,6 +941,216 @@ function collectObjectValue(fieldName, fieldSchema, container) {
     return undefined;
 }
 
+/**
+ * Convert JSON configuration to INI format
+ * @param {Object} jsonData - JSON configuration object
+ * @returns {string} INI formatted string
+ */
+function convertJsonToIni(jsonData) {
+    console.log('[INI] Converting JSON to INI format...');
+    
+    const lines = [];
+    
+    /**
+     * Recursively convert object to INI format
+     * @param {Object} obj - Object to convert
+     * @param {string} parentSection - Parent section name
+     */
+    function processObject(obj, parentSection = '') {
+        for (const [key, value] of Object.entries(obj)) {
+            // Skip null or undefined values
+            if (value === null || value === undefined) {
+                continue;
+            }
+            
+            const fullKey = parentSection ? `${parentSection}.${key}` : key;
+            
+            if (typeof value === 'object' && !Array.isArray(value)) {
+                // Nested object - create section
+                if (Object.keys(value).length > 0) {
+                    if (lines.length > 0 && !lines[lines.length - 1].startsWith('[')) {
+                        lines.push(''); // Add blank line before section
+                    }
+                    lines.push(`[${fullKey}]`);
+                    processObject(value, fullKey);
+                }
+            } else if (Array.isArray(value)) {
+                // Array - convert to INI format
+                value.forEach((item, index) => {
+                    if (typeof item === 'object' && item !== null) {
+                        const arraySection = `${fullKey}[${index}]`;
+                        lines.push(`[${arraySection}]`);
+                        processObject(item, arraySection);
+                    } else {
+                        lines.push(`${fullKey}[${index}]=${formatIniValue(item)}`);
+                    }
+                });
+            } else {
+                // Scalar value - add as key=value
+                lines.push(`${fullKey}=${formatIniValue(value)}`);
+            }
+        }
+    }
+    
+    processObject(jsonData);
+    const iniContent = lines.join('\n');
+    console.log('[INI] Conversion complete');
+    return iniContent;
+}
+
+/**
+ * Format value for INI format
+ * @param {*} value - Value to format
+ * @returns {string} Formatted value
+ */
+function formatIniValue(value) {
+    if (value === null || value === undefined) {
+        return '';
+    }
+    
+    if (typeof value === 'boolean') {
+        return value ? 'true' : 'false';
+    }
+    
+    if (typeof value === 'string') {
+        // Escape special characters
+        return value.replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t');
+    }
+    
+    return String(value);
+}
+
+/**
+ * Parse INI format string to JSON object
+ * Handles nested sections like [section.subsection]
+ * and array indices like [section[0]]
+ * @param {string} iniContent - INI content as string
+ * @returns {Object} Parsed configuration as JSON object
+ */
+function parseIniToJson(iniContent) {
+    console.log('[INI-PARSE] Starting INI to JSON conversion...');
+    const result = {};
+    const lines = iniContent.split('\n');
+    let currentSection = null;  // Track current section
+    
+    for (const line of lines) {
+        // Skip empty lines and comments
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith(';') || trimmed.startsWith('#')) {
+            continue;
+        }
+        
+        // Check for section header: [section]
+        const sectionMatch = trimmed.match(/^\[(.+)\]$/);
+        if (sectionMatch) {
+            currentSection = sectionMatch[1];
+            console.log('[INI-PARSE] Found section:', currentSection);
+            continue;
+        }
+        
+        // Parse key=value pairs
+        const match = trimmed.match(/^([^=]+)=(.*)$/);
+        if (match) {
+            const key = match[1].trim();
+            let value = match[2].trim();
+            
+            // Parse value type
+            if (value === 'true') {
+                value = true;
+            } else if (value === 'false') {
+                value = false;
+            } else if (!isNaN(value) && value !== '') {
+                // Check if it's a number
+                value = value.indexOf('.') !== -1 ? parseFloat(value) : parseInt(value);
+            } else {
+                // Unescape special characters
+                value = value.replace(/\\n/g, '\n').replace(/\\r/g, '\r').replace(/\\t/g, '\t');
+            }
+            
+            // Build the path for this key
+            let fieldPath = key;
+            if (currentSection) {
+                // If we're in a section, prefix the key with section name
+                fieldPath = currentSection + '.' + key;
+            }
+            
+            console.log('[INI-PARSE] Parsing:', fieldPath, '=', value);
+            
+            // Handle array indices: key[0]=value, key[1]=value
+            const arrayMatch = fieldPath.match(/^(.+)\[(\d+)\](.*)$/);
+            if (arrayMatch) {
+                const basePath = arrayMatch[1];
+                const index = parseInt(arrayMatch[2]);
+                const suffix = arrayMatch[3];
+                
+                setNestedValue(result, basePath, index, suffix, value);
+            } else {
+                // Regular nested key: section.key
+                setNestedValue(result, fieldPath, null, null, value);
+            }
+        }
+    }
+    
+    console.log('[INI-PARSE] Conversion complete, result:', result);
+    return result;
+}
+
+/**
+ * Helper function to set nested values in object
+ * Handles both simple paths (a.b.c) and array indices (a[0].b)
+ * @private
+ */
+function setNestedValue(obj, path, arrayIndex, arraySuffix, value) {
+    const parts = path.split('.');
+    let current = obj;
+    
+    // Navigate/create nested structure
+    for (let i = 0; i < parts.length - 1; i++) {
+        const part = parts[i];
+        if (!current[part]) {
+            current[part] = {};
+        }
+        current = current[part];
+    }
+    
+    // Set the value
+    const lastPart = parts[parts.length - 1];
+    
+    if (arrayIndex !== null) {
+        // Handle array: create array if doesn't exist
+        if (!Array.isArray(current[lastPart])) {
+            current[lastPart] = [];
+        }
+        
+        // Ensure array is large enough
+        while (current[lastPart].length <= arrayIndex) {
+            current[lastPart].push({});
+        }
+        
+        if (arraySuffix) {
+            // Array item with properties: [0].property
+            const suffixParts = arraySuffix.split('.');
+            let arrayItem = current[lastPart][arrayIndex];
+            
+            for (let i = 0; i < suffixParts.length - 1; i++) {
+                const suffixPart = suffixParts[i];
+                if (!arrayItem[suffixPart]) {
+                    arrayItem[suffixPart] = {};
+                }
+                arrayItem = arrayItem[suffixPart];
+            }
+            
+            arrayItem[suffixParts[suffixParts.length - 1]] = value;
+        } else {
+            // Simple array value
+            current[lastPart][arrayIndex] = value;
+        }
+    } else {
+        // Regular value
+        current[lastPart] = value;
+    }
+}
+
 async function saveConfiguration() {
     try {
         if (!AppState.selectedSchemaData) {
@@ -951,8 +1161,8 @@ async function saveConfiguration() {
         // Gather form data with nested structure preserved
         const formData = gatherFormData();
         
-        // Show filename input dialog
-        showFilenameInputDialog(formData);
+        // Show format selection dialog first
+        showFormatSelectionDialog(formData);
         
     } catch (error) {
         showError('Failed to save configuration: ' + error.message);
@@ -960,10 +1170,202 @@ async function saveConfiguration() {
 }
 
 /**
- * Show dialog to ask user for filename
+ * Show format selection dialog for save
  * @param {Object} formData - Configuration data to save
  */
-function showFilenameInputDialog(formData) {
+function showFormatSelectionDialog(formData) {
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+    `;
+    
+    const dialog = document.createElement('div');
+    dialog.style.cssText = `
+        background: white;
+        border-radius: 8px;
+        padding: 0;
+        max-width: 500px;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        overflow: hidden;
+    `;
+    
+    // Header
+    const header = document.createElement('div');
+    header.style.cssText = `
+        padding: 24px;
+        border-bottom: 1px solid #e0e0e0;
+        background-color: #f9f9f9;
+    `;
+    
+    const titleEl = document.createElement('h2');
+    titleEl.textContent = 'Select Save Format';
+    titleEl.style.cssText = 'margin: 0; font-size: 20px; font-weight: 600; color: #333;';
+    header.appendChild(titleEl);
+    dialog.appendChild(header);
+    
+    // Body
+    const body = document.createElement('div');
+    body.style.cssText = 'padding: 24px;';
+    
+    const formatSelector = document.createElement('form');
+    formatSelector.style.cssText = 'display: flex; flex-direction: column; gap: 16px;';
+    
+    let selectedFormat = 'json';
+    
+    // JSON option
+    const jsonOption = document.createElement('label');
+    jsonOption.style.cssText = `
+        border: 2px solid #2196F3;
+        border-radius: 6px;
+        padding: 16px;
+        cursor: pointer;
+        background-color: #e3f2fd;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        transition: all 0.2s ease;
+    `;
+    
+    const jsonRadio = document.createElement('input');
+    jsonRadio.type = 'radio';
+    jsonRadio.name = 'format';
+    jsonRadio.value = 'json';
+    jsonRadio.checked = true;
+    jsonRadio.style.cssText = 'margin-top: 2px; cursor: pointer;';
+    jsonRadio.addEventListener('change', () => {
+        selectedFormat = 'json';
+        jsonOption.style.borderColor = '#2196F3';
+        jsonOption.style.backgroundColor = '#e3f2fd';
+        iniOption.style.borderColor = '#e0e0e0';
+        iniOption.style.backgroundColor = 'white';
+    });
+    
+    const jsonInfo = document.createElement('div');
+    jsonInfo.innerHTML = `
+        <div style="font-weight: 600; color: #333; margin-bottom: 4px;">📄 JSON Format</div>
+        <div style="font-size: 14px; color: #666;">Preserves all data types and structure</div>
+    `;
+    
+    jsonOption.appendChild(jsonRadio);
+    jsonOption.appendChild(jsonInfo);
+    formatSelector.appendChild(jsonOption);
+    
+    // INI option
+    const iniOption = document.createElement('label');
+    iniOption.style.cssText = `
+        border: 2px solid #e0e0e0;
+        border-radius: 6px;
+        padding: 16px;
+        cursor: pointer;
+        background-color: white;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        transition: all 0.2s ease;
+    `;
+    
+    const iniRadio = document.createElement('input');
+    iniRadio.type = 'radio';
+    iniRadio.name = 'format';
+    iniRadio.value = 'ini';
+    iniRadio.style.cssText = 'margin-top: 2px; cursor: pointer;';
+    iniRadio.addEventListener('change', () => {
+        selectedFormat = 'ini';
+        jsonOption.style.borderColor = '#e0e0e0';
+        jsonOption.style.backgroundColor = 'white';
+        iniOption.style.borderColor = '#2196F3';
+        iniOption.style.backgroundColor = '#e3f2fd';
+    });
+    
+    const iniInfo = document.createElement('div');
+    iniInfo.innerHTML = `
+        <div style="font-weight: 600; color: #333; margin-bottom: 4px;">⚙️ INI Format</div>
+        <div style="font-size: 14px; color: #666;">Simple key-value format with sections</div>
+    `;
+    
+    iniOption.appendChild(iniRadio);
+    iniOption.appendChild(iniInfo);
+    formatSelector.appendChild(iniOption);
+    
+    body.appendChild(formatSelector);
+    dialog.appendChild(body);
+    
+    // Footer with buttons
+    const footer = document.createElement('div');
+    footer.style.cssText = `
+        padding: 16px 24px;
+        border-top: 1px solid #e0e0e0;
+        background-color: #f9f9f9;
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+    `;
+    
+    const cancelBtn = document.createElement('button');
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.style.cssText = `
+        padding: 10px 24px;
+        background: #e2e8f0;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        color: #2d3748;
+        transition: background 0.2s;
+    `;
+    cancelBtn.onmouseover = () => cancelBtn.style.background = '#cbd5e0';
+    cancelBtn.onmouseout = () => cancelBtn.style.background = '#e2e8f0';
+    cancelBtn.onclick = () => {
+        document.body.removeChild(modal);
+        console.log('[FORMAT] User cancelled format selection');
+    };
+    footer.appendChild(cancelBtn);
+    
+    const saveBtn = document.createElement('button');
+    saveBtn.textContent = 'Next';
+    saveBtn.style.cssText = `
+        padding: 10px 24px;
+        background: #2196F3;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        color: white;
+        transition: background 0.2s;
+    `;
+    saveBtn.onmouseover = () => saveBtn.style.background = '#1976D2';
+    saveBtn.onmouseout = () => saveBtn.style.background = '#2196F3';
+    saveBtn.onclick = () => {
+        document.body.removeChild(modal);
+        console.log(`[FORMAT] Format selected: ${selectedFormat}`);
+        showFilenameInputDialog(formData, selectedFormat);
+    };
+    footer.appendChild(saveBtn);
+    
+    dialog.appendChild(footer);
+    
+    modal.appendChild(dialog);
+    document.body.appendChild(modal);
+}
+
+/**
+ * Show dialog to ask user for filename
+ * @param {Object} formData - Configuration data to save
+ * @param {string} format - Selected format ('json' or 'ini')
+ */
+function showFilenameInputDialog(formData, format = 'json') {
     const modal = document.createElement('div');
     modal.style.cssText = `
         position: fixed;
@@ -1074,11 +1476,12 @@ function showFilenameInputDialog(formData) {
         
         document.body.removeChild(modal);
         
-        // Add .json extension
-        const fullFilename = `${filename}.json`;
+        // Add extension based on format
+        const extension = format === 'ini' ? '.ini' : '.json';
+        const fullFilename = `${filename}${extension}`;
         
         // Start hybrid save
-        await saveConfigurationHybrid(formData, fullFilename);
+        await saveConfigurationHybrid(formData, fullFilename, format);
     };
     
     buttonContainer.appendChild(cancelBtn);
@@ -1103,10 +1506,12 @@ function showFilenameInputDialog(formData) {
  * HYBRID STORAGE: Save configuration to both local PC and server simultaneously
  * @param {Object} formData - Configuration data to save
  * @param {string} defaultFilename - Default filename for saving
+ * @param {string} format - File format ('json' or 'ini')
  */
-async function saveConfigurationHybrid(formData, defaultFilename) {
+async function saveConfigurationHybrid(formData, defaultFilename, format = 'json') {
     try {
         console.log('[HYBRID] Starting hybrid save (local + server)');
+        console.log(`[HYBRID] Format: ${format}`);
         
         let localSaved = false;
         let serverSaved = false;
@@ -1116,20 +1521,22 @@ async function saveConfigurationHybrid(formData, defaultFilename) {
         if ('showSaveFilePicker' in window) {
             try {
                 console.log('[HYBRID] Saving to local PC with file picker...');
-                await saveToLocalPC(formData, defaultFilename);
+                await saveToLocalPC(formData, defaultFilename, format);
                 localSaved = true;
                 console.log('[HYBRID] Local save successful');
             } catch (error) {
                 if (error.name !== 'AbortError') {
                     console.error('[HYBRID] Local save error:', error);
                     errors.push(`Local save: ${error.message}`);
+                } else {
+                    console.log('[HYBRID] User cancelled file picker');
                 }
             }
         } else {
             // Fallback: auto-download
             try {
                 console.log('[HYBRID] File System API not available - using auto-download...');
-                downloadConfigurationFile(formData, defaultFilename);
+                downloadConfigurationFile(formData, defaultFilename, format);
                 localSaved = true;
                 console.log('[HYBRID] Auto-download successful');
             } catch (error) {
@@ -1138,75 +1545,107 @@ async function saveConfigurationHybrid(formData, defaultFilename) {
             }
         }
         
-        // Save to SERVER (simultaneously)
+        // Save to SERVER (simultaneously, with error resilience)
         try {
-            console.log('[HYBRID] Saving to server...');
+            console.log('[HYBRID] Saving to server backup...');
+            // Generate consistent filename if local save failed
             const filename = localSaved ? defaultFilename : 
-                           `config_${new Date().getTime()}.json`;
-            await saveToServerBackup(formData, filename);
+                           `config_${new Date().toISOString().replace(/[:.]/g, '-')}${format === 'ini' ? '.ini' : '.json'}`;
+            await saveToServerBackup(formData, filename, format);
             serverSaved = true;
             console.log('[HYBRID] Server save successful');
         } catch (error) {
             console.error('[HYBRID] Server save error:', error);
-            errors.push(`Server save: ${error.message}`);
+            errors.push(`Server backup: ${error.message}`);
         }
         
         // Show unified result message
         if (localSaved && serverSaved) {
             showToast('success', 'Save Successful', 
-                '✅ Saved to your computer and backed up on server');
+                `✅ Saved to your computer (${format.toUpperCase()}) and backed up on server`);
             console.log('[HYBRID] Both local and server saves completed successfully');
-        } else if (localSaved) {
+        } else if (localSaved && !serverSaved) {
             showToast('warning', 'Partial Save', 
-                '✅ Saved to your computer\n⚠️ Server backup failed - check server connection');
-        } else if (serverSaved) {
+                `✅ Saved to your computer (${format.toUpperCase()})\n⚠️ Server backup failed`);
+            console.log('[HYBRID] Local save successful, server save failed');
+        } else if (!localSaved && serverSaved) {
             showToast('warning', 'Partial Save', 
-                '⚠️ Local save cancelled\n✅ Backup saved on server');
+                `⚠️ Local save cancelled\n✅ Backed up on server (${format.toUpperCase()})`);
+            console.log('[HYBRID] Server save successful, local save cancelled');
         } else {
-            showError('Save Failed: ' + errors.join('; '));
+            if (errors.length > 0) {
+                showError('Save Failed: ' + errors.join('; '));
+            } else {
+                showError('Save cancelled');
+            }
         }
         
-        // Refresh server file list
+        // Refresh server file list to show newly saved file
         try {
             await loadServerFiles();
+            console.log('[HYBRID] Server file list refreshed');
         } catch (error) {
             console.warn('[HYBRID] Could not refresh server file list:', error);
         }
         
     } catch (error) {
-        console.error('[HYBRID] Hybrid save error:', error);
-        showError('Hybrid save failed: ' + error.message);
+        console.error('[HYBRID] Save error:', error);
+        showError('Save failed: ' + error.message);
     }
 }
 
 /**
  * Save configuration to LOCAL PC using File System Access API
  * User chooses save location via file picker
+ * @param {Object} formData - Configuration data to save
+ * @param {string} defaultFilename - Default filename with extension
+ * @param {string} format - File format ('json' or 'ini')
  */
-async function saveToLocalPC(formData, defaultFilename) {
+async function saveToLocalPC(formData, defaultFilename, format = 'json') {
     return new Promise(async (resolve, reject) => {
         try {
-            console.log('[LOCAL] Saving to local PC:', defaultFilename);
+            console.log('[LOCAL] Saving to local PC:', defaultFilename, 'Format:', format);
             
-            // Show file picker dialog
-            const fileHandle = await window.showSaveFilePicker({
-                suggestedName: defaultFilename,
-                types: [
+            // Prepare file types based on format
+            let fileTypes = [];
+            if (format === 'ini') {
+                fileTypes = [
+                    {
+                        description: 'INI Configuration Files',
+                        accept: { 'text/plain': ['.ini'] }
+                    }
+                ];
+            } else {
+                fileTypes = [
                     {
                         description: 'JSON Configuration Files',
                         accept: { 'application/json': ['.json'] }
                     }
-                ],
+                ];
+            }
+            
+            // Show file picker dialog
+            const fileHandle = await window.showSaveFilePicker({
+                suggestedName: defaultFilename,
+                types: fileTypes,
                 startIn: 'documents' // Try to start in Documents folder
             });
             
             console.log('[LOCAL] File picker confirmed:', fileHandle.name);
             
+            // Prepare content based on format
+            let content;
+            if (format === 'ini') {
+                console.log('[LOCAL] Converting to INI format...');
+                content = convertJsonToIni(formData);
+            } else {
+                console.log('[LOCAL] Using JSON format...');
+                content = JSON.stringify(formData, null, 2);
+            }
+            
             // Write file
             const writable = await fileHandle.createWritable();
-            const jsonString = JSON.stringify(formData, null, 2);
-            
-            await writable.write(jsonString);
+            await writable.write(content);
             await writable.close();
             
             console.log('[LOCAL] File saved successfully to:', fileHandle.name);
@@ -1229,13 +1668,29 @@ async function saveToLocalPC(formData, defaultFilename) {
 
 /**
  * Download configuration file (fallback for browsers without File System Access API)
+ * @param {Object} formData - Configuration data to save
+ * @param {string} filename - Filename with extension
+ * @param {string} format - File format ('json' or 'ini')
  */
-function downloadConfigurationFile(formData, filename) {
+function downloadConfigurationFile(formData, filename, format = 'json') {
     try {
-        console.log('[LOCAL] Downloading configuration:', filename);
+        console.log('[LOCAL] Downloading configuration:', filename, 'Format:', format);
         
-        const jsonString = JSON.stringify(formData, null, 2);
-        const blob = new Blob([jsonString], { type: 'application/json' });
+        // Prepare content based on format
+        let fileContent;
+        let mimeType;
+        
+        if (format === 'ini') {
+            console.log('[LOCAL] Converting to INI for download...');
+            fileContent = convertJsonToIni(formData);
+            mimeType = 'text/plain';
+        } else {
+            console.log('[LOCAL] Using JSON for download...');
+            fileContent = JSON.stringify(formData, null, 2);
+            mimeType = 'application/json';
+        }
+        
+        const blob = new Blob([fileContent], { type: mimeType });
         const url = URL.createObjectURL(blob);
         
         // Create and trigger download
@@ -1262,23 +1717,46 @@ function downloadConfigurationFile(formData, filename) {
 /**
  * Save configuration to SERVER as backup
  */
-async function saveToServerBackup(formData, filename) {
+async function saveToServerBackup(formData, filename, format = 'json') {
     try {
-        console.log('[SERVER] Saving backup to server:', filename);
+        console.log('[SERVER] Saving backup to server:', filename, 'Format:', format);
+        
+        // Prepare content based on format
+        let content;
+        if (format === 'ini') {
+            console.log('[SERVER] Converting to INI format...');
+            content = convertJsonToIni(formData);
+        } else {
+            console.log('[SERVER] Using JSON format...');
+            content = JSON.stringify(formData, null, 2);
+        }
+        
+        const requestBody = {
+            filename: filename,
+            format: format,
+            data: formData,
+            content: content
+        };
+        
+        console.log('[SERVER] Fetch URL: /api/config/save');
+        console.log('[SERVER] Request Method: POST');
+        console.log('[SERVER] Request Headers: Content-Type: application/json');
+        console.log('[SERVER] Request Body Keys:', Object.keys(requestBody));
+        console.log('[SERVER] Request Body Size:', JSON.stringify(requestBody).length, 'bytes');
         
         const response = await fetch('/api/config/save', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                filename: filename,
-                data: formData
-            })
+            body: JSON.stringify(requestBody)
         });
+        
+        console.log('[SERVER] Response Status:', response.status, response.statusText);
         
         if (!response.ok) {
             const result = await response.json();
+            console.log('[SERVER] Error Response:', result);
             throw new Error(result.error || 'Server save failed');
         }
         
@@ -2590,11 +3068,21 @@ function handleFileUpload(e) {
     
     console.log('[UPLOAD] File selected:', file.name, 'Type:', file.type);
     
-    // Validate file type
-    const validTypes = ['application/json', 'text/yaml', 'text/plain'];
-    if (!validTypes.includes(file.type) && !file.name.match(/\.(json|yaml|yml)$/)) {
-        console.error('[UPLOAD] Invalid file type:', file.type);
-        showToast('error', 'Invalid File', 'Please upload a JSON or YAML file');
+    // Validate file type - accept JSON, YAML, and INI
+    const validTypes = ['application/json', 'text/yaml', 'text/plain', 'text/x-ini'];
+    const validExtensions = /\.(json|yaml|yml|ini)$/i;
+    
+    // Check validation
+    const mimeTypeValid = validTypes.includes(file.type);
+    const extensionValid = validExtensions.test(file.name);
+    
+    console.log('[UPLOAD] MIME type check:', file.type, 'Valid:', mimeTypeValid);
+    console.log('[UPLOAD] Extension check:', file.name, 'Matches regex:', extensionValid);
+    console.log('[UPLOAD] Validation result:', mimeTypeValid || extensionValid);
+    
+    if (!mimeTypeValid && !extensionValid) {
+        console.error('[UPLOAD] Invalid file type:', file.type, 'Extension:', file.name);
+        showToast('error', 'Invalid File', 'Please upload a JSON, YAML, or INI file');
         return;
     }
     
@@ -2607,9 +3095,17 @@ function handleFileUpload(e) {
             const content = event.target.result;
             console.log('[UPLOAD] File content length:', content.length);
             
-            // Parse as JSON or YAML (for MVP, just JSON)
-            const data = JSON.parse(content);
-            console.log('[UPLOAD] File parsed successfully');
+            // Parse based on file format: JSON, YAML, or INI
+            let data;
+            if (file.name.endsWith('.ini')) {
+                console.log('[UPLOAD] Detected INI format, parsing...');
+                data = parseIniToJson(content);
+                console.log('[UPLOAD] INI parsed successfully');
+            } else {
+                // For JSON and YAML (for MVP, just JSON)
+                data = JSON.parse(content);
+                console.log('[UPLOAD] JSON/YAML parsed successfully');
+            }
             
             // Detect if this is a SCHEMA or a CONFIG file
             // A schema typically has:
@@ -2619,6 +3115,7 @@ function handleFileUpload(e) {
             // A config typically has:
             // - "data" property (our config format)
             // - or just plain key-value data matching our schema structure
+            // - or is an INI file (already converted to JSON object)
             
             const isSchema = !!(
                 data.properties ||           // JSON Schema with properties
@@ -2627,12 +3124,16 @@ function handleFileUpload(e) {
                 data.title && (data.type || data.properties)    // Schema with title and type/properties
             );
             
+            // For INI files specifically: treat as config if it's not a schema
+            const isIniFile = file.name.endsWith('.ini');
+            
             const isConfig = !!(
                 data.data ||                 // Our config format with data wrapper
-                (data.log || data.autoRules || data.parallelism)  // Known config keys
+                (data.log || data.autoRules || data.parallelism) ||  // Known config keys
+                (isIniFile && !isSchema)     // INI files are configs unless they look like schemas
             );
             
-            console.log('[UPLOAD] File type detection: isSchema=', isSchema, 'isConfig=', isConfig);
+            console.log('[UPLOAD] File type detection: isSchema=', isSchema, 'isConfig=', isConfig, 'isIniFile=', isIniFile);
             
             if (isConfig && !isSchema) {
                 // This is a CONFIG file - route to config handler
@@ -2723,10 +3224,12 @@ function handleConfigFileUpload(e) {
     const file = e.target.files[0];
     if (!file) return;
     
-    // Validate file type
-    const validTypes = ['application/json', 'text/yaml', 'text/plain'];
-    if (!validTypes.includes(file.type) && !file.name.match(/\.(json|yaml|yml)$/)) {
-        showToast('error', 'Invalid File', 'Please upload a JSON or YAML configuration file');
+    // Validate file type - accept JSON, YAML, and INI
+    const validTypes = ['application/json', 'text/yaml', 'text/plain', 'text/x-ini'];
+    const validExtensions = /\.(json|yaml|yml|ini)$/i;
+    
+    if (!validTypes.includes(file.type) && !validExtensions.test(file.name)) {
+        showToast('error', 'Invalid File', 'Please upload a JSON, YAML, or INI configuration file');
         return;
     }
     
@@ -2735,8 +3238,15 @@ function handleConfigFileUpload(e) {
     reader.onload = (event) => {
         try {
             const content = event.target.result;
-            // Parse as JSON
-            const configData = JSON.parse(content);
+            
+            // Parse based on file format
+            let configData;
+            if (file.name.endsWith('.ini')) {
+                configData = parseIniToJson(content);
+            } else {
+                // Parse as JSON/YAML
+                configData = JSON.parse(content);
+            }
             
             // Try to use the schema specified in config, or first available schema
             let schemaId = configData.schemaId || (AppState.schemas.length > 0 ? AppState.schemas[0].id : null);
@@ -2774,10 +3284,12 @@ function handleConfigFileUploadModal(e) {
     const file = e.target.files[0];
     if (!file) return;
     
-    // Validate file type
-    const validTypes = ['application/json', 'text/yaml', 'text/plain'];
-    if (!validTypes.includes(file.type) && !file.name.match(/\.(json|yaml|yml)$/)) {
-        showToast('error', 'Invalid File', 'Please upload a JSON or YAML configuration file');
+    // Validate file type - accept JSON, YAML, and INI
+    const validTypes = ['application/json', 'text/yaml', 'text/plain', 'text/x-ini'];
+    const validExtensions = /\.(json|yaml|yml|ini)$/i;
+    
+    if (!validTypes.includes(file.type) && !validExtensions.test(file.name)) {
+        showToast('error', 'Invalid File', 'Please upload a JSON, YAML, or INI configuration file');
         return;
     }
     
@@ -2786,8 +3298,15 @@ function handleConfigFileUploadModal(e) {
     reader.onload = async (event) => {
         try {
             const content = event.target.result;
-            // Parse as JSON
-            const configData = JSON.parse(content);
+            
+            // Parse based on file format
+            let configData;
+            if (file.name.endsWith('.ini')) {
+                configData = parseIniToJson(content);
+            } else {
+                // Parse as JSON/YAML
+                configData = JSON.parse(content);
+            }
             
             // Generate unique ID for this config
             const configId = configData.id || `uploaded-${Date.now()}`;
