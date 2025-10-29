@@ -41,7 +41,7 @@ ValidationErrors SchemaValidator::validate(const json& data) const
     catch (const std::exception& e)
     {
         // Note: In production, parse the validation_error message for detailed field info
-        errors.push_back(ValidationError("", ValidationErrorType::None, "Validation failed", ""));
+        errors.push_back(ValidationError("", ValidationErrorType::None, std::string("Validation failed: ") + e.what(), ""));
     }
 
     return errors;

@@ -1,0 +1,12 @@
+{
+  "name": "configgui",
+  "version-string": "1.0.0",
+  "dependencies": [
+    "nlohmann-json",
+    "yaml-cpp",
+    "json-schema-validator",
+    "gtest",
+    "qtbase",
+    "qttools"
+  ]
+}

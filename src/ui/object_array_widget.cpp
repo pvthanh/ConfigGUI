@@ -242,7 +242,7 @@ QWidget* ObjectArrayWidget::createObjectFormWidget(const json& /* item_schema */
             }
             else if (auto* check_box = qobject_cast<QCheckBox*>(widget))
             {
-                connect(check_box, &QCheckBox::stateChanged, this, &ObjectArrayWidget::valuesChanged);
+                connect(check_box, &QCheckBox::checkStateChanged, this, &ObjectArrayWidget::valuesChanged);
             }
             else if (auto* spin_box = qobject_cast<QSpinBox*>(widget))
             {

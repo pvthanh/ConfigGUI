@@ -108,7 +108,7 @@ void RuleEditorWidget::createUI()
     // Signals
     connect(type_combo_, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &RuleEditorWidget::onTypeChanged);
-    connect(required_check_, &QCheckBox::stateChanged,
+    connect(required_check_, &QCheckBox::checkStateChanged,
             this, &RuleEditorWidget::onRequiredChanged);
 
     // Initial UI setup
@@ -131,7 +131,7 @@ void RuleEditorWidget::createDynamicWidgets()
         string_allow_empty_ = new QCheckBox("Allow Empty");
         string_allow_empty_->setChecked(current_rule_.allow_empty);
         form->addRow(string_allow_empty_);
-        connect(string_allow_empty_, &QCheckBox::stateChanged, this, &RuleEditorWidget::updatePreview);
+        connect(string_allow_empty_, &QCheckBox::checkStateChanged, this, &RuleEditorWidget::updatePreview);
 
         auto* pattern_label = new QLabel("Pattern (Optional):");
         string_pattern_ = new QLineEdit();

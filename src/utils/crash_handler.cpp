@@ -6,8 +6,10 @@
 
 #include <csignal>
 #include <cstring>
+#ifndef _WIN32
 #include <unistd.h>
 #include <fcntl.h>
+#endif
 #if defined(__linux__)
 #include <execinfo.h>
 #endif
@@ -25,6 +27,7 @@ int g_log_fd = -1;
 // Write a string using async-signal-safe write()
 void writeStr(int fd, const char* s)
 {
+#ifndef _WIN32
     if (fd < 0 || s == nullptr) { return; }
     const size_t len = std::strlen(s);
     if (len > 0) {
@@ -32,6 +35,10 @@ void writeStr(int fd, const char* s)
         (void)::write(fd, s, len);
         (void)::write(fd, "\n", 1);
     }
+#else
+    (void)fd;
+    (void)s;
+#endif
 }
 
 void signalHandler(int sig)
@@ -87,6 +94,7 @@ void qtMessageRedirect(QtMsgType type, const QMessageLogContext& ctx, const QStr
 
 void installCrashHandlers(const std::string& log_path)
 {
+#ifndef _WIN32
     // Open crash log file
     std::string path = log_path.empty() ? std::string("/tmp/configgui_crash.log") : log_path;
     g_log_fd = ::open(path.c_str(), O_CREAT | O_WRONLY | O_APPEND, 0644);
@@ -94,6 +102,10 @@ void installCrashHandlers(const std::string& log_path)
         // Fallback to stderr
         g_log_fd = STDERR_FILENO;
     }
+#else
+    (void)log_path;
+    g_log_fd = 2; // stderr on Windows
+#endif
 
     // Install minimal handlers
     std::signal(SIGSEGV, signalHandler);

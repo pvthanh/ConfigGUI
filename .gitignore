@@ -1,12 +1,23 @@
 # Build directories
 build/
+build-*/
 cmake-build-debug/
 cmake-build-release/
+out/
+
+# vcpkg artifacts (package manager cache)
+vcpkg_installed/
+.vcpkg-root
+vcpkg-manifest-install.log
+
+# Compiled binaries
 *.o
 *.a
 *.so
 *.dylib
 *.exe
+*.dll
+*.lib
 
 # IDE and editor files
 .vscode/
@@ -22,6 +33,33 @@ CMakeFiles/
 cmake_install.cmake
 Makefile
 *.cmake
+CTestTestfile.cmake
+CPackConfig.cmake
+CPackSourceConfig.cmake
+
+# Visual Studio / Windows
+.vs/
+*.user
+*.suo
+*.sln.docstates
+*.vcxproj.filters
+*.vcxproj.user
+x64/
+Debug/
+Release/
+*.sln
+*.vcxproj
+
+# Qt generated files
+*.qrc.depends
+*.moc
+*_moc.cpp
+*_ui.h
+qrc_*.cpp
+moc_*.cpp
+ui_*.h
+*_autogen/
+.qt/
 
 # Test outputs
 *.gcov

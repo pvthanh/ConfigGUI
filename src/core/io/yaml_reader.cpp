@@ -4,7 +4,7 @@
 #include "yaml_reader.h"
 #include <fstream>
 #include <sstream>
-#include <yaml.h>
+#include <yaml-cpp/yaml.h>
 #include <stack>
 
 namespace configgui {

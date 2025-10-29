@@ -452,7 +452,7 @@ void FormGenerator::addFieldToFormWithMetadata(QVBoxLayout* parent_layout, const
     }
     else if (auto* check_box = qobject_cast<QCheckBox*>(widget))
     {
-        connect(check_box, &QCheckBox::stateChanged, this, &FormGenerator::onFieldChanged);
+        connect(check_box, &QCheckBox::checkStateChanged, this, &FormGenerator::onFieldChanged);
     }
     else if (auto* combo_box = qobject_cast<QComboBox*>(widget))
     {
@@ -566,7 +566,7 @@ void FormGenerator::addSimpleFieldToForm(const QString& field_name, const json& 
     }
     else if (auto* check_box = qobject_cast<QCheckBox*>(widget))
     {
-        connect(check_box, &QCheckBox::stateChanged, this, &FormGenerator::onFieldChanged);
+        connect(check_box, &QCheckBox::checkStateChanged, this, &FormGenerator::onFieldChanged);
     }
     else if (auto* combo_box = qobject_cast<QComboBox*>(widget))
     {
@@ -587,11 +587,11 @@ json FormGenerator::getFormData() const
 
 json FormGenerator::collectDataRecursive(const json& schema, const QString& parent_path) const
 {
-    json data = json::object();
+    json result_data = json::object();
 
     if (!schema.contains("properties"))
     {
-        return data;
+        return result_data;
     }
 
     const auto& properties = schema["properties"];
@@ -640,7 +640,7 @@ json FormGenerator::collectDataRecursive(const json& schema, const QString& pare
             {
                 // Recursively collect nested object data with new parent path
                 std::cerr << "  - Recursing into nested object with parent_path: " << qualified_key.toStdString() << std::endl;
-                data[key] = collectDataRecursive(prop_schema, qualified_key);
+                result_data[key] = collectDataRecursive(prop_schema, qualified_key);
             }
             else
             {
@@ -650,25 +650,25 @@ json FormGenerator::collectDataRecursive(const json& schema, const QString& pare
                     const FieldWidget& fw = field_widgets_[qualified_key];
                     
                     if (auto* line_edit = qobject_cast<QLineEdit*>(fw.widget))
-                        data[key] = line_edit->text().toStdString();
+                        result_data[key] = line_edit->text().toStdString();
                     else if (auto* path_widget = qobject_cast<PathSelectorWidget*>(fw.widget))
-                        data[key] = path_widget->text().toStdString();
+                        result_data[key] = path_widget->text().toStdString();
                     else if (auto* combo_box = qobject_cast<QComboBox*>(fw.widget))
-                        data[key] = combo_box->currentText().toStdString();
+                        result_data[key] = combo_box->currentText().toStdString();
                     else if (auto* spin_box = qobject_cast<QSpinBox*>(fw.widget))
-                        data[key] = spin_box->value();
+                        result_data[key] = spin_box->value();
                     else if (auto* double_spin = qobject_cast<QDoubleSpinBox*>(fw.widget))
-                        data[key] = double_spin->value();
+                        result_data[key] = double_spin->value();
                     else if (auto* check_box = qobject_cast<QCheckBox*>(fw.widget))
-                        data[key] = check_box->isChecked();
+                        result_data[key] = check_box->isChecked();
                     else if (auto* array_widget = qobject_cast<ArrayWidget*>(fw.widget))
-                        data[key] = array_widget->getValues();
+                        result_data[key] = array_widget->getValues();
                     else if (auto* range_widget = qobject_cast<RangeWidget*>(fw.widget))
-                        data[key] = range_widget->getValues();
+                        result_data[key] = range_widget->getValues();
                     else if (auto* dict_widget = qobject_cast<DictionaryWidget*>(fw.widget))
-                        data[key] = dict_widget->getValues();
+                        result_data[key] = dict_widget->getValues();
                     else if (auto* obj_array_widget = qobject_cast<ObjectArrayWidget*>(fw.widget))
-                        data[key] = obj_array_widget->getValues();
+                        result_data[key] = obj_array_widget->getValues();
                 }
             }
         }
@@ -682,32 +682,32 @@ json FormGenerator::collectDataRecursive(const json& schema, const QString& pare
                 std::cerr << "  - FOUND" << std::endl;
                 
                 if (auto* line_edit = qobject_cast<QLineEdit*>(fw.widget))
-                    data[key] = line_edit->text().toStdString();
+                    result_data[key] = line_edit->text().toStdString();
                 else if (auto* path_widget = qobject_cast<PathSelectorWidget*>(fw.widget))
-                    data[key] = path_widget->text().toStdString();
+                    result_data[key] = path_widget->text().toStdString();
                 else if (auto* combo_box = qobject_cast<QComboBox*>(fw.widget))
-                    data[key] = combo_box->currentText().toStdString();
+                    result_data[key] = combo_box->currentText().toStdString();
                 else if (auto* spin_box = qobject_cast<QSpinBox*>(fw.widget))
-                    data[key] = spin_box->value();
+                    result_data[key] = spin_box->value();
                 else if (auto* double_spin = qobject_cast<QDoubleSpinBox*>(fw.widget))
-                    data[key] = double_spin->value();
+                    result_data[key] = double_spin->value();
                 else if (auto* check_box = qobject_cast<QCheckBox*>(fw.widget))
-                    data[key] = check_box->isChecked();
+                    result_data[key] = check_box->isChecked();
                 else if (auto* array_widget = qobject_cast<ArrayWidget*>(fw.widget))
                 {
                     std::cerr << "  - ArrayWidget, calling getValues()" << std::endl;
                     auto values = array_widget->getValues();
                     std::cerr << "  - ArrayWidget returned: " << values.dump() << std::endl;
-                    data[key] = values;
+                    result_data[key] = values;
                 }
                 else if (auto* range_widget = qobject_cast<RangeWidget*>(fw.widget))
-                    data[key] = range_widget->getValues();
+                    result_data[key] = range_widget->getValues();
                 else if (auto* dict_widget = qobject_cast<DictionaryWidget*>(fw.widget))
-                    data[key] = dict_widget->getValues();
+                    result_data[key] = dict_widget->getValues();
                 else if (auto* obj_array_widget = qobject_cast<ObjectArrayWidget*>(fw.widget))
-                    data[key] = obj_array_widget->getValues();
+                    result_data[key] = obj_array_widget->getValues();
                     
-                std::cerr << "  - Result stored: " << data[key].dump() << std::endl;
+                std::cerr << "  - Result stored: " << result_data[key].dump() << std::endl;
             }
             else
             {
@@ -717,18 +717,18 @@ json FormGenerator::collectDataRecursive(const json& schema, const QString& pare
     }
 
     std::cerr << "[collectDataRecursive] Completed for parent_path: " << parent_path.toStdString() << std::endl;
-    return data;
+    return result_data;
 }
 
-void FormGenerator::setFormData(const json& data)
+void FormGenerator::setFormData(const json& config_data)
 {
-    if (!data.is_object())
+    if (!config_data.is_object())
     {
         return;
     }
 
     // Recursively apply values at any nesting level
-    applyDataRecursive(data, "");
+    applyDataRecursive(config_data, "");
 
     is_dirty_ = false;
 }

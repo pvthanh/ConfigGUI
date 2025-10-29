@@ -100,8 +100,8 @@ target_link_libraries(ConfigGUICore
     PUBLIC
         $<$<BOOL:${BUILD_QT_APP}>:Qt6::Core>
         nlohmann_json::nlohmann_json
-        nlohmann_json_schema_validator
-        yaml-cpp
+        nlohmann_json_schema_validator::validator
+        yaml-cpp::yaml-cpp
 )
 
 # Include mINI header-only library

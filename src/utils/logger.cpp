@@ -81,7 +81,13 @@ std::string Logger::getLevelName(Level level)
 std::string Logger::getTimestamp()
 {
     auto now = std::time(nullptr);
+#ifdef _WIN32
+    std::tm tm_buf;
+    localtime_s(&tm_buf, &now);
+    auto& tm = tm_buf;
+#else
     auto tm = *std::localtime(&now);
+#endif
 
     std::ostringstream oss;
     oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
