@@ -813,54 +813,54 @@ function collectArrayValue(fieldName, fieldSchema, container) {
         items.forEach(item => {
             const obj = {};
             
-            // Check if items have nested properties (items.properties in schema)
-            if (fieldSchema.items && fieldSchema.items.properties) {
-                // Collect properties based on schema
-                Object.keys(fieldSchema.items.properties).forEach(propName => {
-                    const propSchema = fieldSchema.items.properties[propName];
-                    const propInput = item.querySelector(`[data-field-name="${propName}"]`);
-                    
-                    if (propInput) {
-                        let propValue = propInput.value;
-                        if (propValue !== '') {
-                            // Remove escaped quotes if present
-                            if (typeof propValue === 'string' && propValue.startsWith('"') && propValue.endsWith('"')) {
-                                propValue = propValue.slice(1, -1);
-                            }
-                            
-                            // Type conversion
-                            if (propSchema.type === 'number') {
-                                propValue = parseFloat(propValue);
-                            } else if (propSchema.type === 'integer') {
-                                propValue = parseInt(propValue);
-                            } else if (propSchema.type === 'boolean') {
-                                propValue = propInput.checked;
-                            }
-                            obj[propName] = propValue;
+            // Collect ALL data-field-name inputs in this item (including dynamic fields)
+            const propInputs = item.querySelectorAll('[data-field-name]');
+            propInputs.forEach(propInput => {
+                const propName = propInput.getAttribute('data-field-name');
+                
+                // Handle array fields (like enum)
+                if (propInput.closest('.array-field')) {
+                    const arrayField = propInput.closest('.array-field');
+                    const arrayItems = arrayField.querySelectorAll('.array-item input');
+                    const arrayValues = [];
+                    arrayItems.forEach(arrayInput => {
+                        if (arrayInput.value && arrayInput.value.trim() !== '') {
+                            arrayValues.push(arrayInput.value.trim());
                         }
+                    });
+                    if (arrayValues.length > 0) {
+                        obj[propName] = arrayValues;
                     }
-                });
-            } else {
-                // Fallback: collect all data-field-name inputs in this item
-                const propInputs = item.querySelectorAll('[data-field-name]');
-                propInputs.forEach(propInput => {
-                    const propName = propInput.getAttribute('data-field-name');
-                    let propValue = propInput.value;
-                    if (propValue !== '') {
+                    return; // Skip the main input processing for array fields
+                }
+                
+                // Handle regular inputs
+                let propValue;
+                if (propInput.type === 'checkbox') {
+                    propValue = propInput.checked;
+                    obj[propName] = propValue; // Always include boolean values
+                } else {
+                    propValue = propInput.value;
+                    if (propValue !== undefined && propValue !== null && propValue !== '') {
                         // Remove escaped quotes if present
                         if (typeof propValue === 'string' && propValue.startsWith('"') && propValue.endsWith('"')) {
                             propValue = propValue.slice(1, -1);
                         }
                         
+                        // Type conversion based on input type
                         if (propInput.type === 'number') {
                             propValue = parseFloat(propValue);
-                        } else if (propInput.type === 'checkbox') {
-                            propValue = propInput.checked;
+                        } else if (propName === 'minimum' || propName === 'maximum') {
+                            // Ensure numeric fields are converted to numbers
+                            propValue = parseFloat(propValue);
+                            if (isNaN(propValue)) {
+                                return; // Skip invalid numbers
+                            }
                         }
                         obj[propName] = propValue;
                     }
-                });
-            }
+                }
+            });
             
             if (Object.keys(obj).length > 0) {
                 arrayData.push(obj);
@@ -2643,6 +2643,17 @@ function addObjectArrayItem(container, fieldSchema, objData, index) {
                 }
             }
             
+            // ADD DYNAMIC TYPE CHANGE HANDLING
+            if (propName === 'type' && propSchema.enum && propSchema.enum.includes('string') && propSchema.enum.includes('integer')) {
+                const typeSelect = fieldElement.querySelector('select');
+                if (typeSelect) {
+                    typeSelect.addEventListener('change', function() {
+                        console.log('[DYNAMIC] Type changed to:', this.value, 'for item', index);
+                        updateObjectItemDynamicFields(content, this.value, objData, fieldSchema, index);
+                    });
+                }
+            }
+            
             content.appendChild(fieldElement);
         });
     }
@@ -2663,6 +2674,106 @@ function addObjectArrayItem(container, fieldSchema, objData, index) {
     };
     
     container.appendChild(itemDiv);
+}
+
+/**
+ * Update dynamic fields in an object array item based on type selection
+ */
+function updateObjectItemDynamicFields(contentElement, selectedType, objData, fieldSchema, itemIndex) {
+    console.log('[DYNAMIC] Updating fields for type:', selectedType, 'item:', itemIndex);
+    
+    // Remove existing dynamic fields (minimum, maximum, pattern, enum, allowEmpty)
+    const dynamicFields = ['minimum', 'maximum', 'pattern', 'enum', 'allowEmpty'];
+    dynamicFields.forEach(fieldName => {
+        const existingField = contentElement.querySelector(`[data-field-name="${fieldName}"]`);
+        if (existingField) {
+            const fieldGroup = existingField.closest('.form-group');
+            if (fieldGroup) {
+                fieldGroup.remove();
+            }
+        }
+    });
+    
+    // Add type-specific fields
+    if (selectedType === 'string') {
+        // Add allowEmpty checkbox
+        addDynamicField(contentElement, 'allowEmpty', {
+            type: 'boolean',
+            default: objData.allowEmpty || false
+        }, itemIndex);
+        
+        // Add pattern field
+        addDynamicField(contentElement, 'pattern', {
+            type: 'string',
+            placeholder: 'Regex pattern (optional)',
+            default: objData.pattern || ''
+        }, itemIndex);
+        
+        // Add enum array field
+        addDynamicField(contentElement, 'enum', {
+            type: 'array',
+            items: { type: 'string' },
+            default: objData.enum || []
+        }, itemIndex);
+        
+    } else if (selectedType === 'integer' || selectedType === 'float') {
+        // Add minimum field
+        addDynamicField(contentElement, 'minimum', {
+            type: 'number',
+            placeholder: 'Minimum value (optional)',
+            default: objData.minimum
+        }, itemIndex);
+        
+        // Add maximum field
+        addDynamicField(contentElement, 'maximum', {
+            type: 'number', 
+            placeholder: 'Maximum value (optional)',
+            default: objData.maximum
+        }, itemIndex);
+        
+    } else if (selectedType === 'boolean') {
+        // Boolean has no additional fields
+        console.log('[DYNAMIC] Boolean type has no additional fields');
+    }
+    
+    console.log('[DYNAMIC] Dynamic fields updated for type:', selectedType);
+}
+
+/**
+ * Add a dynamic field to the content element
+ */
+function addDynamicField(contentElement, fieldName, fieldSchema, itemIndex) {
+    console.log('[DYNAMIC] Adding dynamic field:', fieldName, 'with schema:', fieldSchema);
+    
+    const fieldElement = createFormField(fieldName, fieldSchema, itemIndex);
+    fieldElement.classList.add('dynamic-field'); // Mark as dynamic for easy removal
+    
+    // Set the value if provided in default
+    if (fieldSchema.default !== undefined) {
+        const inputElement = fieldElement.querySelector('input, textarea, select');
+        if (inputElement) {
+            if (inputElement.type === 'checkbox') {
+                inputElement.checked = fieldSchema.default;
+            } else if (fieldSchema.type === 'array') {
+                // For array fields, we need to populate the array items
+                if (Array.isArray(fieldSchema.default) && fieldSchema.default.length > 0) {
+                    const arrayContainer = fieldElement.querySelector('.array-items');
+                    if (arrayContainer) {
+                        // Clear existing items
+                        arrayContainer.innerHTML = '';
+                        // Add items from default
+                        fieldSchema.default.forEach(value => {
+                            addSimpleArrayItem(arrayContainer, fieldSchema, value);
+                        });
+                    }
+                }
+            } else {
+                inputElement.value = fieldSchema.default;
+            }
+        }
+    }
+    
+    contentElement.appendChild(fieldElement);
 }
 
 function removeArrayItem(container) {

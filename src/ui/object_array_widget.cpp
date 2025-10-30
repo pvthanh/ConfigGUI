@@ -16,6 +16,7 @@
 #include <QToolButton>
 #include <QScrollArea>
 #include <QFormLayout>
+#include <QMessageBox>
 
 namespace configgui {
 namespace ui {
@@ -24,29 +25,30 @@ ObjectArrayWidget::ObjectArrayWidget(const json& schema, QWidget* parent)
     : QWidget(parent)
     , schema_(schema)
 {
-    auto* main_layout = new QVBoxLayout(this);
-    main_layout->setSpacing(5);
-    main_layout->setContentsMargins(0, 0, 0, 0);
+    try {
+        auto* main_layout = new QVBoxLayout(this);
+        main_layout->setSpacing(5);
+        main_layout->setContentsMargins(0, 0, 0, 0);
 
-    // Container for array items
-    items_layout_ = new QVBoxLayout();
-    items_layout_->setSpacing(8);
-    
-    auto* items_widget = new QWidget();
-    items_widget->setLayout(items_layout_);
-    
-    // Add scroll area for many items
-    auto* scroll = new QScrollArea();
-    scroll->setWidget(items_widget);
-    scroll->setWidgetResizable(true);
-    scroll->setMaximumHeight(400);
-    main_layout->addWidget(scroll);
+        // Container for array items
+        items_layout_ = new QVBoxLayout();
+        items_layout_->setSpacing(8);
+        
+        auto* items_widget = new QWidget();
+        items_widget->setLayout(items_layout_);
+        
+        // Add scroll area for many items
+        auto* scroll = new QScrollArea();
+        scroll->setWidget(items_widget);
+        scroll->setWidgetResizable(true);
+        scroll->setMaximumHeight(400);
+        main_layout->addWidget(scroll);
 
-    // Add buttons container
-    buttons_container_ = new QWidget();
-    auto* button_layout = new QHBoxLayout(buttons_container_);
-    button_layout->setSpacing(5);
-    button_layout->setContentsMargins(0, 0, 0, 0);
+        // Add buttons container
+        buttons_container_ = new QWidget();
+        auto* button_layout = new QHBoxLayout(buttons_container_);
+        button_layout->setSpacing(5);
+        button_layout->setContentsMargins(0, 0, 0, 0);
 
     add_button_ = new QPushButton("+");
     add_button_->setMaximumWidth(40);
@@ -56,80 +58,96 @@ ObjectArrayWidget::ObjectArrayWidget(const json& schema, QWidget* parent)
     remove_button_ = new QPushButton("-");
     remove_button_->setMaximumWidth(40);
     remove_button_->setToolTip("Remove last object from array");
-    connect(remove_button_, &QPushButton::clicked, this, &ObjectArrayWidget::onRemoveItem);
+        connect(remove_button_, &QPushButton::clicked, this, &ObjectArrayWidget::onRemoveItem);
 
-    button_layout->addWidget(add_button_);
-    button_layout->addWidget(remove_button_);
-    button_layout->addStretch();
+        button_layout->addWidget(add_button_);
+        button_layout->addWidget(remove_button_);
+        button_layout->addStretch();
 
-    main_layout->addWidget(buttons_container_);
+        main_layout->addWidget(buttons_container_);
 
-    // Initialize with default or example values if available
-    // First try "default", then fall back to "examples"
-    if (schema_.contains("default") && schema_["default"].is_array())
-    {
-        for (const auto& item : schema_["default"])
-        {
-            addItemWidget(item);
-        }
-    }
-    else if (schema_.contains("examples") && schema_["examples"].is_array())
-    {
-        // Use examples as initial data if no default
-        for (const auto& item : schema_["examples"])
-        {
-            if (item.is_array() && item.size() > 0)
+        // Initialize with default or example values if available (with safety checks)
+        // First try "default", then fall back to "examples"
+        try {
+            if (schema_.contains("default") && schema_["default"].is_array())
             {
-                // Examples is an array of arrays, take first example array
-                for (const auto& example_item : item)
+                for (const auto& item : schema_["default"])
                 {
-                    if (example_item.is_object())
-                    {
-                        addItemWidget(example_item);
+                    if (item.is_object()) {
+                        addItemWidget(item);
                     }
                 }
-                break;  // Only use first example array
             }
+            else if (schema_.contains("examples") && schema_["examples"].is_array())
+            {
+                // Use examples as initial data if no default
+                for (const auto& item : schema_["examples"])
+                {
+                    if (item.is_array() && item.size() > 0)
+                    {
+                        // Examples is an array of arrays, take first example array
+                        for (const auto& example_item : item)
+                        {
+                            if (example_item.is_object())
+                            {
+                                addItemWidget(example_item);
+                            }
+                        }
+                        break;  // Only use first example array
+                    }
+                }
+            }
+        } catch (const std::exception& e) {
+            // Log error but don't crash - continue with empty array
+            qWarning() << "Error initializing ObjectArrayWidget default values:" << e.what();
+        }
+
+        updateAddRemoveButtons();
+    } catch (const std::exception& e) {
+        qCritical() << "Critical error in ObjectArrayWidget constructor:" << e.what();
+        // Create minimal layout to avoid crashes
+        if (!layout()) {
+            setLayout(new QVBoxLayout(this));
         }
     }
-
-    updateAddRemoveButtons();
 }
 
 QWidget* ObjectArrayWidget::createObjectFormWidget(const json& /* item_schema */, const json& item_data)
 {
-    auto* form_widget = new QWidget();
-    auto* form_layout = new QFormLayout(form_widget);
-    form_layout->setSpacing(8);
-    form_layout->setContentsMargins(10, 5, 10, 5);
+    try {
+        auto* form_widget = new QWidget();
+        auto* form_layout = new QFormLayout(form_widget);
+        form_layout->setSpacing(8);
+        form_layout->setContentsMargins(10, 5, 10, 5);
 
-    // Get the item schema (items definition)
-    if (!schema_.contains("items") || !schema_["items"].contains("properties"))
-    {
-        return form_widget;
-    }
-
-    const auto& properties = schema_["items"]["properties"];
-    std::vector<std::string> field_order;
-
-    // Determine field order from "required" array if available
-    if (schema_["items"].contains("required") && schema_["items"]["required"].is_array())
-    {
-        for (const auto& field : schema_["items"]["required"])
+        // Get the item schema (items definition) with safety checks
+        if (!schema_.contains("items") || !schema_["items"].contains("properties"))
         {
-            if (field.is_string())
+            qWarning() << "ObjectArrayWidget: Schema missing items.properties";
+            return form_widget;
+        }
+
+        const auto& properties = schema_["items"]["properties"];
+        std::vector<std::string> field_order;
+
+        // Determine field order from "required" array if available
+        if (schema_["items"].contains("required") && schema_["items"]["required"].is_array())
+        {
+            for (const auto& field : schema_["items"]["required"])
             {
-                field_order.push_back(field.get<std::string>());
+                if (field.is_string())
+                {
+                    field_order.push_back(field.get<std::string>());
+                }
             }
         }
-    }
-    else
-    {
-        for (auto it = properties.begin(); it != properties.end(); ++it)
+        else
         {
-            field_order.push_back(it.key());
+            for (auto it = properties.begin(); it != properties.end(); ++it)
+            {
+                field_order.push_back(it.key());
+            }
         }
-    }
 
     // Check if this is a rule object (has "name" and "type" fields)
     bool is_rule_object = properties.contains("name") && 
@@ -256,39 +274,70 @@ QWidget* ObjectArrayWidget::createObjectFormWidget(const json& /* item_schema */
     }
 
     return form_widget;
+    
+    } catch (const std::exception& e) {
+        qCritical() << "Error in createObjectFormWidget:" << e.what();
+        // Return minimal widget to avoid crashes
+        auto* error_widget = new QWidget();
+        auto* error_layout = new QVBoxLayout(error_widget);
+        auto* error_label = new QLabel(QString("Error creating form: %1").arg(e.what()));
+        error_label->setStyleSheet("color: red; font-weight: bold;");
+        error_layout->addWidget(error_label);
+        return error_widget;
+    } catch (...) {
+        qCritical() << "Unknown error in createObjectFormWidget";
+        // Return minimal widget to avoid crashes
+        auto* error_widget = new QWidget();
+        auto* error_layout = new QVBoxLayout(error_widget);
+        auto* error_label = new QLabel("Unknown error creating form");
+        error_label->setStyleSheet("color: red; font-weight: bold;");
+        error_layout->addWidget(error_label);
+        return error_widget;
+    }
 }
 
 void ObjectArrayWidget::addItemWidget(const json& item_data)
 {
-    auto* item_container = new QGroupBox();
-    auto* item_layout = new QVBoxLayout(item_container);
-    item_layout->setSpacing(5);
+    try {
+        if (!items_layout_) {
+            qWarning() << "ObjectArrayWidget::addItemWidget: items_layout_ is null";
+            return;
+        }
 
-    // Create header with collapse button
-    auto* header_container = new QWidget();
-    auto* header_layout = new QHBoxLayout(header_container);
-    header_layout->setSpacing(5);
-    header_layout->setContentsMargins(0, 0, 0, 0);
+        auto* item_container = new QGroupBox();
+        auto* item_layout = new QVBoxLayout(item_container);
+        item_layout->setSpacing(5);
 
-    auto* toggle_button = new QToolButton();
-    toggle_button->setText("▼");  // Expanded initially
-    toggle_button->setStyleSheet("QToolButton { border: none; background: none; font-size: 11px; padding: 0px; margin: 0px; }");
-    toggle_button->setMaximumWidth(20);
+        // Create header with collapse button
+        auto* header_container = new QWidget();
+        auto* header_layout = new QHBoxLayout(header_container);
+        header_layout->setSpacing(5);
+        header_layout->setContentsMargins(0, 0, 0, 0);
 
-    // Create label showing object index/summary
-    QString summary;
-    if (item_data.contains("name"))
-    {
-        summary = QString::fromStdString(item_data["name"].get<std::string>());
-    }
-    else if (item_data.contains("type"))
-    {
-        summary = QString::fromStdString(item_data["type"].get<std::string>());
-    }
-    else
-    {
-        summary = QString::number(items_layout_->count() + 1);
-    }
+        auto* toggle_button = new QToolButton();
+        toggle_button->setText("▼");  // Expanded initially
+        toggle_button->setStyleSheet("QToolButton { border: none; background: none; font-size: 11px; padding: 0px; margin: 0px; }");
+        toggle_button->setMaximumWidth(20);
+
+        // Create label showing object index/summary with null checks
+        QString summary;
+        try {
+            if (item_data.contains("name") && item_data["name"].is_string())
+            {
+                summary = QString::fromStdString(item_data["name"].get<std::string>());
+            }
+            else if (item_data.contains("type"))
+            {
+                summary = QString::fromStdString(item_data["type"].get<std::string>());
+            }
+            else
+            {
+                summary = QString::number(items_layout_->count() + 1);
+            }
+        } catch (const std::exception& e) {
+            qWarning() << "Error reading item summary:" << e.what();
+            summary = "Item";
+        }
 
     auto* header_label = new QLabel("Item: " + summary);
     header_label->setStyleSheet("font-weight: bold;");
@@ -318,12 +367,45 @@ void ObjectArrayWidget::addItemWidget(const json& item_data)
 
     items_layout_->addWidget(item_container);
     updateAddRemoveButtons();
+    
+    } catch (const std::exception& e) {
+        qCritical() << "Error in addItemWidget:" << e.what();
+        // Create error placeholder widget
+        auto* error_container = new QGroupBox("Error");
+        auto* error_layout = new QVBoxLayout(error_container);
+        auto* error_label = new QLabel(QString("Failed to create item widget: %1").arg(e.what()));
+        error_label->setStyleSheet("color: red;");
+        error_layout->addWidget(error_label);
+        
+        if (items_layout_) {
+            items_layout_->addWidget(error_container);
+        }
+        updateAddRemoveButtons();
+    } catch (...) {
+        qCritical() << "Unknown error in addItemWidget";
+        // Create error placeholder widget
+        auto* error_container = new QGroupBox("Error");
+        auto* error_layout = new QVBoxLayout(error_container);
+        auto* error_label = new QLabel("Unknown error creating item widget");
+        error_label->setStyleSheet("color: red;");
+        error_layout->addWidget(error_label);
+        
+        if (items_layout_) {
+            items_layout_->addWidget(error_container);
+        }
+        updateAddRemoveButtons();
+    }
 }
 
 void ObjectArrayWidget::onAddItem()
 {
-    addItemWidget();
-    emit valuesChanged();
+    try {
+        addItemWidget();
+        emit valuesChanged();
+    } catch (const std::exception& e) {
+        qCritical() << "Error in onAddItem:" << e.what();
+        QMessageBox::warning(this, "Error", QString("Failed to add item: %1").arg(e.what()));
+    }
 }
 
 void ObjectArrayWidget::onRemoveItem()

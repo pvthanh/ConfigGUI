@@ -44,13 +44,15 @@ FormGenerator::FormGenerator(QWidget* parent)
 
 bool FormGenerator::generateFromSchema(const json& schema)
 {
-    // Clear existing widgets
-    clearForm();
+    try {
+        // Clear existing widgets
+        clearForm();
 
-    if (!schema.is_object() || !schema.contains("properties"))
-    {
-        return false;
-    }
+        if (!schema.is_object() || !schema.contains("properties"))
+        {
+            qWarning() << "FormGenerator: Invalid schema - missing properties";
+            return false;
+        }
 
     // Store the schema for later use in getFormData()
     schema_ = schema;
@@ -78,12 +80,43 @@ bool FormGenerator::generateFromSchema(const json& schema)
         {
             const QString field_name = QString::fromStdString(field_name_str);
             const json& field_schema = properties[field_name_str];
-            addFieldToForm(field_name, field_schema);
+            
+            try {
+                addFieldToForm(field_name, field_schema);
+            } catch (const std::exception& e) {
+                qCritical() << "Error adding field" << field_name << ":" << e.what();
+                // Add error placeholder instead of crashing
+                auto* error_label = new QLabel(QString("Error loading field '%1': %2").arg(field_name, e.what()));
+                error_label->setStyleSheet("color: red; font-weight: bold; padding: 5px; border: 1px solid red;");
+                layout_->addWidget(error_label);
+            }
         }
     }
 
     layout_->addStretch();
     return true;
+    
+    } catch (const std::exception& e) {
+        qCritical() << "Critical error in generateFromSchema:" << e.what();
+        
+        // Clear any partial form and show error
+        clearForm();
+        auto* error_label = new QLabel(QString("Failed to generate form from schema: %1").arg(e.what()));
+        error_label->setStyleSheet("color: red; font-weight: bold; padding: 10px; border: 2px solid red;");
+        layout_->addWidget(error_label);
+        
+        return false;
+    } catch (...) {
+        qCritical() << "Unknown critical error in generateFromSchema";
+        
+        // Clear any partial form and show error
+        clearForm();
+        auto* error_label = new QLabel("Unknown error occurred while generating form");
+        error_label->setStyleSheet("color: red; font-weight: bold; padding: 10px; border: 2px solid red;");
+        layout_->addWidget(error_label);
+        
+        return false;
+    }
 }
 
 void FormGenerator::addFieldToForm(const QString& field_name, const json& field_schema)

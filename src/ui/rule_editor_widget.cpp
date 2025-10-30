@@ -8,6 +8,8 @@
 #include <QGroupBox>
 #include <QLabel>
 #include <QScrollArea>
+#include <QMessageBox>
+#include <QDebug>
 #include <sstream>
 #include <limits>
 #include <cmath>
@@ -118,149 +120,225 @@ void RuleEditorWidget::createUI()
 
 void RuleEditorWidget::createDynamicWidgets()
 {
-    clearDynamicWidgets();
+    try {
+        qDebug() << "RuleEditorWidget::createDynamicWidgets - Starting widget creation";
+        
+        clearDynamicWidgets();
 
-    std::string type = type_combo_->currentText().toStdString();
+        std::string type = type_combo_->currentText().toStdString();
+        qDebug() << "Creating dynamic widgets for type:" << QString::fromStdString(type);
 
-    if (type == "string")
-    {
-        auto* form = new QFormLayout();
-        form->setSpacing(5);
-        form->setContentsMargins(0, 0, 0, 0);
-
-        string_allow_empty_ = new QCheckBox("Allow Empty");
-        string_allow_empty_->setChecked(current_rule_.allow_empty);
-        form->addRow(string_allow_empty_);
-        connect(string_allow_empty_, &QCheckBox::checkStateChanged, this, &RuleEditorWidget::updatePreview);
-
-        auto* pattern_label = new QLabel("Pattern (Optional):");
-        string_pattern_ = new QLineEdit();
-        string_pattern_->setPlaceholderText("Regex pattern...");
-        string_pattern_->setText(QString::fromStdString(current_rule_.pattern));
-        form->addRow(pattern_label, string_pattern_);
-        connect(string_pattern_, &QLineEdit::textChanged, this, &RuleEditorWidget::updatePreview);
-
-        auto* enum_label = new QLabel("Enum Values (Optional):");
-        enum_label->setToolTip("Separate values with | (e.g., Even|Odd|Mixed)");
-        string_enum_ = new QLineEdit();
-        string_enum_->setPlaceholderText("value1|value2|value3");
-        if (!current_rule_.enum_values.empty())
+        if (type == "string")
         {
-            std::string enum_str;
-            for (size_t i = 0; i < current_rule_.enum_values.size(); ++i)
+            auto* form = new QFormLayout();
+            form->setSpacing(5);
+            form->setContentsMargins(0, 0, 0, 0);
+
+            string_allow_empty_ = new QCheckBox("Allow Empty");
+            string_allow_empty_->setChecked(current_rule_.allow_empty);
+            form->addRow(string_allow_empty_);
+            connect(string_allow_empty_, &QCheckBox::checkStateChanged, this, &RuleEditorWidget::updatePreview);
+
+            auto* pattern_label = new QLabel("Pattern (Optional):");
+            string_pattern_ = new QLineEdit();
+            string_pattern_->setPlaceholderText("Regex pattern...");
+            string_pattern_->setText(QString::fromStdString(current_rule_.pattern));
+            form->addRow(pattern_label, string_pattern_);
+            connect(string_pattern_, &QLineEdit::textChanged, this, &RuleEditorWidget::updatePreview);
+
+            auto* enum_label = new QLabel("Enum Values (Optional):");
+            enum_label->setToolTip("Separate values with | (e.g., Even|Odd|Mixed)");
+            string_enum_ = new QLineEdit();
+            string_enum_->setPlaceholderText("value1|value2|value3");
+            if (!current_rule_.enum_values.empty())
             {
-                if (i > 0) enum_str += "|";
-                enum_str += current_rule_.enum_values[i];
+                std::string enum_str;
+                for (size_t i = 0; i < current_rule_.enum_values.size(); ++i)
+                {
+                    if (i > 0) enum_str += "|";
+                    enum_str += current_rule_.enum_values[i];
+                }
+                string_enum_->setText(QString::fromStdString(enum_str));
             }
-            string_enum_->setText(QString::fromStdString(enum_str));
+            form->addRow(enum_label, string_enum_);
+            connect(string_enum_, &QLineEdit::textChanged, this, &RuleEditorWidget::updatePreview);
+
+            if (dynamic_layout_) {
+                dynamic_layout_->addLayout(form);
+            }
         }
-        form->addRow(enum_label, string_enum_);
-        connect(string_enum_, &QLineEdit::textChanged, this, &RuleEditorWidget::updatePreview);
-
-        dynamic_layout_->addLayout(form);
-    }
-    else if (type == "integer" || type == "float")
-    {
-        auto* form = new QFormLayout();
-        form->setSpacing(5);
-        form->setContentsMargins(0, 0, 0, 0);
-
-        numeric_minimum_ = new QDoubleSpinBox();
-        numeric_minimum_->setMinimum(-999999);
-        numeric_minimum_->setMaximum(999999);
-        if (!isFloatEqual(current_rule_.minimum, std::numeric_limits<double>::lowest()))
+        else if (type == "integer" || type == "float")
         {
-            numeric_minimum_->setValue(current_rule_.minimum);
-        }
-        form->addRow("Minimum:", numeric_minimum_);
-        connect(numeric_minimum_, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &RuleEditorWidget::updatePreview);
+            auto* form = new QFormLayout();
+            form->setSpacing(5);
+            form->setContentsMargins(0, 0, 0, 0);
 
-        numeric_maximum_ = new QDoubleSpinBox();
-        numeric_maximum_->setMinimum(-999999);
-        numeric_maximum_->setMaximum(999999);
-        if (!isFloatEqual(current_rule_.maximum, std::numeric_limits<double>::max()))
+            numeric_minimum_ = new QDoubleSpinBox();
+            numeric_minimum_->setMinimum(-999999);
+            numeric_minimum_->setMaximum(999999);
+            if (!isFloatEqual(current_rule_.minimum, std::numeric_limits<double>::lowest()))
+            {
+                numeric_minimum_->setValue(current_rule_.minimum);
+            }
+            form->addRow("Minimum:", numeric_minimum_);
+            connect(numeric_minimum_, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &RuleEditorWidget::updatePreview);
+
+            numeric_maximum_ = new QDoubleSpinBox();
+            numeric_maximum_->setMinimum(-999999);
+            numeric_maximum_->setMaximum(999999);
+            if (!isFloatEqual(current_rule_.maximum, std::numeric_limits<double>::max()))
+            {
+                numeric_maximum_->setValue(current_rule_.maximum);
+            }
+            form->addRow("Maximum:", numeric_maximum_);
+            connect(numeric_maximum_, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &RuleEditorWidget::updatePreview);
+
+            if (dynamic_layout_) {
+                dynamic_layout_->addLayout(form);
+            }
+        }
+        else if (type == "boolean")
         {
-            numeric_maximum_->setValue(current_rule_.maximum);
+            auto* label = new QLabel("Boolean has no additional constraints");
+            label->setStyleSheet("color: #999;");
+            if (dynamic_layout_) {
+                dynamic_layout_->addWidget(label);
+            }
         }
-        form->addRow("Maximum:", numeric_maximum_);
-        connect(numeric_maximum_, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &RuleEditorWidget::updatePreview);
 
-        dynamic_layout_->addLayout(form);
+        if (dynamic_layout_) {
+            dynamic_layout_->addStretch();
+        }
+        
+        qDebug() << "RuleEditorWidget::createDynamicWidgets - Widget creation completed successfully";
+        
+    } catch (const std::exception& e) {
+        qCritical() << "Error in RuleEditorWidget::createDynamicWidgets:" << e.what();
+        // Don't show message box here as it's called from onTypeChanged which already handles errors
+        throw; // Re-throw to be caught by onTypeChanged
     }
-    else if (type == "boolean")
-    {
-        auto* label = new QLabel("Boolean has no additional constraints");
-        label->setStyleSheet("color: #999;");
-        dynamic_layout_->addWidget(label);
-    }
-
-    dynamic_layout_->addStretch();
 }
 
 void RuleEditorWidget::clearDynamicWidgets()
 {
-    // Delete existing dynamic widgets
-    string_allow_empty_ = nullptr;
-    string_pattern_ = nullptr;
-    string_enum_ = nullptr;
-    numeric_minimum_ = nullptr;
-    numeric_maximum_ = nullptr;
+    try {
+        qDebug() << "RuleEditorWidget::clearDynamicWidgets - Starting widget cleanup";
+        
+        // Safe widget cleanup - use deleteLater() instead of delete
+        string_allow_empty_ = nullptr;
+        string_pattern_ = nullptr;
+        string_enum_ = nullptr;
+        numeric_minimum_ = nullptr;
+        numeric_maximum_ = nullptr;
 
-    // Clear layout completely - remove all items and delete their widgets
-    while (dynamic_layout_->count() > 0)
-    {
-        QLayoutItem* item = dynamic_layout_->takeAt(0);
-        if (item)
-        {
-            // If item contains a layout, clear it first
-            if (item->layout())
+        // Clear layout safely - use deleteLater() to avoid crashes
+        if (dynamic_layout_) {
+            while (dynamic_layout_->count() > 0)
             {
-                QLayout* layout = item->layout();
-                while (layout->count() > 0)
+                QLayoutItem* item = dynamic_layout_->takeAt(0);
+                if (item)
                 {
-                    QLayoutItem* child_item = layout->takeAt(0);
-                    if (child_item->widget())
+                    // If item contains a layout, clear it safely
+                    if (item->layout())
                     {
-                        delete child_item->widget();
+                        QLayout* layout = item->layout();
+                        while (layout->count() > 0)
+                        {
+                            QLayoutItem* child_item = layout->takeAt(0);
+                            if (child_item && child_item->widget())
+                            {
+                                // Use deleteLater() for safe widget deletion
+                                child_item->widget()->deleteLater();
+                            }
+                            delete child_item;
+                        }
+                        // Don't delete the layout immediately, let Qt handle it
+                        layout->deleteLater();
                     }
-                    delete child_item;
+                    // If item contains a widget, delete it safely
+                    else if (item->widget())
+                    {
+                        // Use deleteLater() for safe widget deletion
+                        item->widget()->deleteLater();
+                    }
+                    delete item;
                 }
-                delete layout;
             }
-            // If item contains a widget, delete it
-            else if (item->widget())
-            {
-                delete item->widget();
-            }
-            delete item;
         }
+        
+        qDebug() << "RuleEditorWidget::clearDynamicWidgets - Widget cleanup completed";
+        
+    } catch (const std::exception& e) {
+        qCritical() << "Error in RuleEditorWidget::clearDynamicWidgets:" << e.what();
+        // Don't throw here - we want cleanup to complete even if there are errors
+    } catch (...) {
+        qCritical() << "Unknown error in RuleEditorWidget::clearDynamicWidgets";
+        // Don't throw here - we want cleanup to complete even if there are errors
     }
 }
 
 void RuleEditorWidget::onTypeChanged(int index)
 {
-    Q_UNUSED(index);
-    createDynamicWidgets();
-    updatePreview();
-    dynamic_layout_->update();
-    dynamic_widget_->update();
-    update();
-    emit ruleChanged();
+    try {
+        Q_UNUSED(index);
+        qDebug() << "RuleEditorWidget::onTypeChanged - Starting type change";
+        
+        createDynamicWidgets();
+        updatePreview();
+        
+        // Safe updates with null checks
+        if (dynamic_layout_) {
+            dynamic_layout_->update();
+        }
+        if (dynamic_widget_) {
+            dynamic_widget_->update();
+        }
+        update();
+        
+        qDebug() << "RuleEditorWidget::onTypeChanged - Type change completed successfully";
+        emit ruleChanged();
+        
+    } catch (const std::exception& e) {
+        qCritical() << "Error in RuleEditorWidget::onTypeChanged:" << e.what();
+        QMessageBox::warning(this, "Type Change Error", 
+                           QString("Failed to change rule type: %1").arg(e.what()));
+    } catch (...) {
+        qCritical() << "Unknown error in RuleEditorWidget::onTypeChanged";
+        QMessageBox::warning(this, "Type Change Error", 
+                           "Unknown error occurred while changing rule type");
+    }
 }
 
 void RuleEditorWidget::onRequiredChanged(int state)
 {
-    Q_UNUSED(state);
-    updatePreview();
-    emit ruleChanged();
+    try {
+        Q_UNUSED(state);
+        updatePreview();
+        emit ruleChanged();
+    } catch (const std::exception& e) {
+        qCritical() << "Error in RuleEditorWidget::onRequiredChanged:" << e.what();
+    }
 }
 
 void RuleEditorWidget::updatePreview()
 {
-    RuleDefinition rule = getRule();
-    std::string shorthand = RuleParser::toShorthand(rule);
-    preview_label_->setText(QString("Preview: ") + QString::fromStdString(getFieldName()) + " : " +
-                           QString::fromStdString(shorthand));
+    try {
+        if (!preview_label_) {
+            qWarning() << "RuleEditorWidget::updatePreview - preview_label_ is null";
+            return;
+        }
+        
+        RuleDefinition rule = getRule();
+        std::string shorthand = RuleParser::toShorthand(rule);
+        preview_label_->setText(QString("Preview: ") + QString::fromStdString(getFieldName()) + " : " +
+                               QString::fromStdString(shorthand));
+                               
+    } catch (const std::exception& e) {
+        qCritical() << "Error in RuleEditorWidget::updatePreview:" << e.what();
+        if (preview_label_) {
+            preview_label_->setText("Preview: Error generating preview");
+        }
+    }
 }
 
 std::string RuleEditorWidget::getShorthand() const

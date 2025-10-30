@@ -611,5 +611,80 @@ All bugs have been verified fixed through:
 
 ---
 
+## Critical Crash Protection Fixes (October 2025)
+
+### Customer Demo Silent Crash Issue
+
+**Issue**: ConfigGUI was experiencing silent crashes during customer demonstrations when users changed rule types from "string" to "integer" in the `configureRules.dataTypeValidationRule.rules` ObjectArrayWidget.
+
+**Root Cause**: The dynamic widget recreation process in `RuleEditorWidget::clearDynamicWidgets()` was using unsafe direct widget deletion while Qt's event system still had pending events for those widgets.
+
+**Impact**: 
+- Silent application termination during demos
+- No error messages to guide users
+- Complete loss of work and form data
+
+**Fixes Implemented**:
+
+1. **Enhanced Windows Crash Handler** (`src/utils/crash_handler.cpp`)
+   - Added Windows structured exception handling with `SetUnhandledExceptionFilter()`
+   - User-friendly error messages via QMessageBox instead of silent crashes
+   - Automatic crash report generation with timestamps
+   - Fixed Windows CRT security warnings using `localtime_s()`
+
+2. **RuleEditorWidget Dynamic Type Change Protection** (`src/ui/rule_editor_widget.cpp`) 
+   - **Critical Fix**: Replaced direct `delete widget` with `widget->deleteLater()` for safe widget cleanup
+   - Complete try-catch wrapper around `onTypeChanged()` operations
+   - Protected `createDynamicWidgets()` and `updatePreview()` methods
+   - Added detailed debug logging for type change operations
+
+3. **ObjectArrayWidget Safety** (`src/ui/object_array_widget.cpp`)
+   - Constructor wrapped in try-catch with fallback layout creation
+   - Protected schema default/example value initialization
+   - Safe JSON property access with null pointer checks
+   - Error placeholder widgets instead of crashes
+
+4. **Form Generator Protection** (`src/ui/form_generator.cpp`)
+   - Field-by-field exception handling to prevent total form failure
+   - Graceful degradation with visible error labels
+   - Protected schema processing operations
+
+5. **Main Application Protection** (`src/main.cpp`)
+   - Enhanced top-level exception handling with informative error dialogs
+
+**Before vs After**:
+- **Before**: User changes type → Silent crash → Application terminates
+- **After**: User changes type → Safe widget recreation OR clear error message → Application continues
+
+**Testing**: The fix specifically addresses the type change scenario in `dataTypeValidationRule.rules` that was causing customer demo failures.
+
+---
+
+## HTML Form Dynamic Type Change Fix (October 2025)
+
+**Issue**: The HTML form (localhost:8080) was not properly saving type changes in `dataTypeValidationRule.rules` when users changed types from "string" to "integer".
+
+**Root Cause**: Unlike the Qt application, the HTML form was creating static fields without dynamic field management when type dropdowns changed.
+
+**Fixes Implemented**:
+
+1. **Dynamic Type Change Detection** (`src/html/assets/js/main.js`)
+   - Added event listeners to type dropdown fields in object arrays
+   - Automatic field updates when type selection changes
+
+2. **Type-Specific Field Management**
+   - **String Type**: Shows `allowEmpty` checkbox, `pattern` field, `enum` array
+   - **Integer/Float Type**: Shows `minimum` and `maximum` number fields
+   - **Boolean Type**: No additional fields
+
+3. **Enhanced Data Collection**
+   - Updated form data gathering to capture all dynamic fields
+   - Proper handling of array fields (enum values)
+   - Improved type conversion for numeric fields
+
+**Result**: HTML form now behaves like the Qt application with automatic field updates and proper data saving when type selections change.
+
+---
+
 **For Questions or Issues:**
 See `SOFTWARE_ARCHITECTURE.md` and `INSTALLATION_AND_USAGE_GUIDE.md` for more details.

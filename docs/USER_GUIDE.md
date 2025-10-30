@@ -519,6 +519,70 @@ git push
 
 ---
 
+## Troubleshooting
+
+### Desktop Application Issues
+
+#### Type Change Crashes (Fixed October 2025)
+**Issue**: Application crashes when changing rule types in object arrays.
+**Solution**: This has been fixed with enhanced crash protection. If you still experience issues:
+1. Ensure you're using the latest version
+2. Check that no other Qt applications are interfering
+3. Restart the application if widgets appear unresponsive
+
+#### Dynamic Field Updates Not Working
+**Problem**: Fields don't update when changing dropdown selections in object arrays.
+**Solution**: 
+- The application now uses safe widget recreation
+- Changes are automatically saved when switching types
+- If fields don't update, try clicking away and back to the field
+
+### Web Interface Issues
+
+#### Type Changes Not Saving (Fixed October 2025)
+**Issue**: Configuration file doesn't reflect type changes in `dataTypeValidationRule.rules`.
+**Solution**: The web form now properly handles dynamic type changes:
+- Fields automatically update when type selection changes
+- Save operation captures all dynamic fields
+- Refresh the page if fields appear stuck
+
+#### Missing Fields After Type Change
+**Problem**: Expected fields don't appear after changing from "string" to "integer".
+**Solution**:
+1. Clear browser cache and reload
+2. Ensure JavaScript is enabled
+3. Check browser console for errors (F12)
+4. The form should now automatically show:
+   - String type: `allowEmpty`, `pattern`, `enum` fields
+   - Integer type: `minimum`, `maximum` fields
+   - Boolean type: no additional fields
+
+#### Data Not Saving Properly
+**Problem**: Form data doesn't persist after save operation.
+**Solution**:
+- The enhanced data collection now captures all field types
+- Array fields (like enum values) are properly handled
+- Boolean values are always included (even when false)
+- Refresh the configuration view to see changes
+
+### General Issues
+
+#### Schema Validation Errors
+**Problem**: Schema files don't load properly.
+**Solution**:
+1. Validate JSON syntax using online tools
+2. Ensure required properties are defined
+3. Check that schema follows JSON Schema Draft 7 format
+
+#### File Format Issues
+**Problem**: Saved files are not in expected format.
+**Solution**:
+1. Check file extension (.json, .yaml, .ini)
+2. Verify output directory permissions
+3. Use "Save As" to specify exact format
+
+---
+
 ## Tips and Tricks
 
 ### Tip 1: Keyboard Shortcuts

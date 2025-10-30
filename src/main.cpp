@@ -3,6 +3,7 @@
 // Copyright (c) 2025
 
 #include <QApplication>
+#include <QMessageBox>
 #include "ui/main_window.h"
 #include "utils/logger.h"
 #include "utils/crash_handler.h"
@@ -54,11 +55,15 @@ int main(int argc, char* argv[])
     }
     catch (const std::exception& e)
     {
+        QString error_msg = QString("ConfigGUI encountered a critical error and needs to close.\n\nError: %1").arg(e.what());
         configgui::utils::Logger::error(std::string("Unhandled exception: ") + e.what());
+        QMessageBox::critical(nullptr, "ConfigGUI Critical Error", error_msg);
     }
     catch (...)
     {
+        QString error_msg = "ConfigGUI encountered an unknown critical error and needs to close.";
         configgui::utils::Logger::error("Unhandled non-standard exception in main");
+        QMessageBox::critical(nullptr, "ConfigGUI Critical Error", error_msg);
     }
 
     return 1;
